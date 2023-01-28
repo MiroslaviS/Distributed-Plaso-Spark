@@ -122,3 +122,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#Pycharm files
+.idea/
+
+#HDFS volume files
+services/volumes/
