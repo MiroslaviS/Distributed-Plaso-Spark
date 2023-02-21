@@ -1,0 +1,106 @@
+version: '3'
+services:
+
+  # HDFS services from rychly-edu
+  # HDFS namenode
+  namenode:
+    image: registry.gitlab.com/rychly-edu/docker/docker-hdfs:3.2.1
+    environment:
+      - ROLE=namenode
+      - DFS_DEFAULT=hdfs://namenode:8020
+      - NAME_DIRS=/home/hadoop/name
+      - DFS_NAMENODES=rpc://namenode:8020,http://namenode:9870,https://namenode:9871
+      - ADD_USERS=spark
+      - PROP_HDFS_dfs_permissions_enabled=false
+    ports:
+      - "54987:9870"
+      - "54988:8020"
+    volumes:
+      - .\volumes\namenode:/home/hadoop/name
+
+  datanode1:
+    image: registry.gitlab.com/rychly-edu/docker/docker-hdfs:3.2.1
+    environment:
+      - ROLE=datanode
+      - DFS_DEFAULT=hdfs://namenode:8020
+      - DATA_DIRS=/home/hadoop/data
+      - DFS_DATANODES=data://0.0.0.0:9866,http://0.0.0.0:9864,https://0.0.0.0:9865,ipc://0.0.0.0:9867
+      - PROP_HDFS_dfs_permissions_enabled=false
+#    ports:
+#      - "9866"
+#      - "9864"
+#      - "9865"
+#      - "9867"
+    volumes:
+      - .\volumes\datanode1:/home/hadoop/data
+
+  datanode2:
+    image: registry.gitlab.com/rychly-edu/docker/docker-hdfs:3.2.1
+    environment:
+      - ROLE=datanode
+      - DFS_DEFAULT=hdfs://namenode:8020
+      - DATA_DIRS=/home/hadoop/data
+      - DFS_DATANODES=data://0.0.0.0:9866,http://0.0.0.0:9864,https://0.0.0.0:9865,ipc://0.0.0.0:9867
+      - PROP_HDFS_dfs_permissions_enabled=false
+#    ports:
+#      - "9866"
+#      - "9864"
+#      - "9865"
+#      - "9867"
+    volumes:
+      - .\volumes\datanode2:/home/hadoop/data
+
+  datanode3:
+    image: registry.gitlab.com/rychly-edu/docker/docker-hdfs:3.2.1
+    environment:
+      - ROLE=datanode
+      - DFS_DEFAULT=hdfs://namenode:8020
+      - DATA_DIRS=/home/hadoop/data
+      - DFS_DATANODES=data://0.0.0.0:9866,http://0.0.0.0:9864,https://0.0.0.0:9865,ipc://0.0.0.0:9867
+      - PROP_HDFS_dfs_permissions_enabled=false
+#    ports:
+#      - "9866"
+#      - "9864"
+#      - "9865"
+#      - "9867"
+    volumes:
+      - .\volumes\datanode3:/home/hadoop/data
+
+  sparkmaster:
+    image: registry.gitlab.com/rychly-edu/docker/docker-spark:2.4.4-hadoop3.2
+    environment:
+      - ROLE=master
+      - MASTER_PORT=7077
+      - WEBUI_PORT=4040
+    ports:
+#      - "7077:7077"
+      - "54041:4040"
+
+  sparkworker:
+    # hadoop 3.2.0 bug: missing lib/native/lihdfs.so, so cannot use pyarrow hdfs -> use hadoop 3.1.*
+    image: registry.gitlab.com/rychly-edu/docker/docker-spark:2.4.4-hadoop3.2
+    # to restart lost workers (i.e., workers exited with after a task or on a failure when asked to kill an executor)
+    restart: always
+    environment:
+      - ROLE=worker
+      - MASTER_URL=spark://sparkmaster:7077
+      - WEBUI_PORT=4040
+#    ports:
+#      - "4040:4041"
+
+  sparkapp:
+    image: hdfsspark_app
+    environment:
+      - MASTER_URL=spark://sparkmaster:7077
+      - SPARK_JARS=/app/lib
+      - SPARK_PYFILES=/app/lib
+      - SPARK_APP=/app/main.py
+      - WEBUI_PORT=4040
+    ports:
+      - "4040:4040"
+      - "5000:5000"
+    volumes:
+      - type: bind
+        source: ..\docker-app\app
+        target: /app
+        read_only: true

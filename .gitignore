@@ -128,3 +128,5 @@ dmypy.json
 
 #HDFS volume files
 services/volumes/
+
+docker-app/app/upload_processed/
