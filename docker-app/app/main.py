@@ -5,18 +5,16 @@
 """
 from flask import Flask, request, make_response
 from managers.filemanager import LocalStorageManager
-import os
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = "upload_no_process/"
-app.config['PREPROCESSED_FOLDER'] = "upload_processed/"
+app.config['UPLOAD_FOLDER'] = "upload_no_process"
+app.config['PREPROCESSED_FOLDER'] = "upload_processed"
 
 local_storage = LocalStorageManager(app)
 
-
 @app.route("/")
 def main_page():
-    return "Ahooj"
+    return "Ahooj2"
 
 @app.route("/upload/files", methods=['POST'])
 def upload_files():
@@ -27,7 +25,7 @@ def upload_files():
     saved_files = local_storage.save_files(files)
 
     local_storage.preprocess_files()
-    return make_response({"status": "OK", "saved_files": saved_files}, 200)
+    return make_response({"status": "OK, preprocessing before HDFS started", "saved_files": saved_files}, 200)
 
 @app.route("/upload/file")
 def upload_file():
@@ -38,14 +36,7 @@ def upload_file():
     filename = local_storage.save_file(file)
 
     local_storage.preprocess_files()
-    return make_response({"status": "OK", "saved_file": filename}, 200)
-
-@app.route("/upload/zip")
-def upload_zip():
-    if 'zipfile' not in request.files:
-        return make_response("Missing file in request", 400)
-
-    zip_file = request.files['zipfile']
+    return make_response({"status": "OK, preprocessing before HDFS started", "saved_file": filename}, 200)
 
 @app.route("/upload/hdfs")
 def upload_to_hdfs():

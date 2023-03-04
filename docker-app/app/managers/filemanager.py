@@ -2,15 +2,21 @@ import os
 
 from managers.storagemanager import StorageManager
 from multiprocessing import Process
-from pyarrow import fs
+from pyarrow import fs, input_stream
 
 class LocalStorageManager(StorageManager):
     def __init__(self, app):
-        super(LocalStorageManager, self).__init__(app.config['UPLOAD_FOLDER'], app.config['PREPROCESSED_FOLDER'])
+        super(LocalStorageManager, self).__init__(app.config['UPLOAD_FOLDER'], app.config['PREPROCESSED_FOLDER'], app.logger)
 
         self.app = app
         self.uploaded_files = []
         self.hdfs = fs.HadoopFileSystem("namenode", 8020)
+        self.debug = True
+
+    def log(self, *strings):
+        string = " ".join(strings)
+
+        self.app.logger.warning(string)
 
     def save_files(self, files):
         for file in files:
@@ -33,16 +39,40 @@ class LocalStorageManager(StorageManager):
         self.uploaded_files = []
 
     def upload_to_hdfs(self):
-        foo = self.hdfs.get_file_info(fs.FileSelector('/'))
-        print("HDFS PATTH: ", foo)
+        hdfs_files = self._process_files_to_hdfs()
 
-        self.hdfs.create_dir("/new_dir")
+        return hdfs_files
 
-        with self.hdfs.open_output_stream("/test") as stream:
-            stream.write('Jezisko')
+    def save_file_to_hdfs(self, hdfs_path, file_path):
+        with self.hdfs.open_output_stream(hdfs_path) as stream:
+            with input_stream(file_path) as f:
+                stream.upload(f)
+                stream.flush()
 
-        with self.hdfs.open_input_file("/test") as f:
-            result = f.readall()
+        if self.debug:
+            with self.hdfs.open_input_file(hdfs_path) as f:
+                try:
+                    self.log(f"File {hdfs_path} -- {f.size()}")
+                except:
+                    return False, None
 
-        return result.decode("utf-8")
+        return True, hdfs_path
 
+    def _process_files_to_hdfs(self):
+        hdfs_saved_files = []
+
+        for root, dirs, files in os.walk(self.preprocessed_folder):
+            hdfs_folder = root.replace(self.preprocessed_folder, "/")
+
+            for directory in dirs:
+                hdfs_dir_path = os.path.join(hdfs_folder, directory)
+                self.hdfs.create_dir(hdfs_dir_path)
+
+            for file in files:
+                hdfs_file_path = os.path.join(hdfs_folder, file)
+                local_file_path = os.path.join(root, file)
+                success, hdfs_path = self.save_file_to_hdfs(hdfs_file_path, local_file_path)
+                if success:
+                    hdfs_saved_files.append(hdfs_path)
+
+        return hdfs_saved_files

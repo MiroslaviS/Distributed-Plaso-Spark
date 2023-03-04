@@ -3,7 +3,6 @@
 DIR=$(dirname "${0}")
 
 . "${DIR}/spark-entrypoint-helpers.sh"
-
 # from docker-hadoop-base/scripts/application-helpers.sh
 . "${DIR}/application-helpers.sh"
 

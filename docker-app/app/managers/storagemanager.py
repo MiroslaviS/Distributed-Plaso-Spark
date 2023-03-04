@@ -17,7 +17,7 @@ import zipfile
 import libarchive
 
 class StorageManager:
-    def __init__(self, storage_folder, proccessed_folder):
+    def __init__(self, storage_folder, proccessed_folder, logger):
         self.upload_folder = storage_folder
         self.preprocessed_folder = proccessed_folder
 
@@ -25,6 +25,8 @@ class StorageManager:
         self._resolver_context = dfvfs_context.Context()
 
         self._create_internal_folders()
+
+        self.log = logger.warning
 
     def _create_internal_folders(self):
         os.makedirs(self.upload_folder, exist_ok=True)
@@ -43,6 +45,8 @@ class StorageManager:
                 continue
 
             delete_file, exported_files = self._scanSource(entry)
+
+
             upload_paths.extend(exported_files)
 
             if delete_file:
@@ -119,6 +123,7 @@ class StorageManager:
         elif source_type == definitions.SOURCE_TYPE_STORAGE_MEDIA_IMAGE:
             return_code, export_image_path = self._scan_media_storage(source_path_spec)
             extracted_files.append(export_image_path)
+            delete_file = True
 
         return delete_file, extracted_files
 
@@ -220,8 +225,11 @@ class StorageManager:
         return saved_file
 
     def _create_folder_from_archive(self, archive_path):
-        file_name = archive_path.split('/')[-1].replace('.', '_')
-        folder_name = os.path.join(self.preprocessed_folder, file_name)
+        file_name = os.path.basename(archive_path).replace(".", "_")
+        archive_folder = os.path.dirname(archive_path)
+        archive_folder = archive_folder.replace(self.upload_folder, self.preprocessed_folder)
+
+        folder_name = os.path.join(archive_folder, file_name)
         os.makedirs(folder_name, exist_ok=True)
 
         return folder_name
@@ -271,6 +279,7 @@ class StorageManager:
 
         source_path_location = source_path.location
         export_image_path = self._create_folder_from_archive(source_path_location)
+
         logfile = "delete_me_" + str(os.getpid())
 
         export_return_code = subprocess.run(['image_export.py', '-w', export_image_path, source_path_location, "--partitions", "all", "--volumes", "all", "-q", "--logfile", logfile])

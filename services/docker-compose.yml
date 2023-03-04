@@ -89,7 +89,7 @@ services:
 #      - "4040:4041"
 
   sparkapp:
-    image: hdfsspark_app
+    image: sparkapp_test
     environment:
       - MASTER_URL=spark://sparkmaster:7077
       - SPARK_JARS=/app/lib
@@ -100,7 +100,10 @@ services:
       - "4040:4040"
       - "5000:5000"
     volumes:
-      - type: bind
-        source: ..\docker-app\app
-        target: /app
-        read_only: true
+      - ..\docker-app\app:/app
+    working_dir: /app
+#    entrypoint: tail -F /dev/null
+#    volumes:
+#      - type: bind
+#        source: ..\docker-app\app
+#        target: /app
