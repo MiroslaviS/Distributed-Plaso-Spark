@@ -62,15 +62,24 @@ class LocalStorageManager(StorageManager):
         hdfs_saved_files = []
 
         for root, dirs, files in os.walk(self.preprocessed_folder):
-            hdfs_folder = root.replace(self.preprocessed_folder, "/")
+            hdfs_folder = root.replace(self.preprocessed_folder, "")
+            if hdfs_folder == "":
+                hdfs_folder = "/"
+
+            self.log("ROOT - " + root)
+            self.log("HDFS FOLDER - " + hdfs_folder)
 
             for directory in dirs:
+                self.log("CREATING DIR: " + directory)
                 hdfs_dir_path = os.path.join(hdfs_folder, directory)
                 self.hdfs.create_dir(hdfs_dir_path)
 
             for file in files:
                 hdfs_file_path = os.path.join(hdfs_folder, file)
+                self.log("HDFS FILE PATH: " + hdfs_file_path)
+
                 local_file_path = os.path.join(root, file)
+                self.log("LOCAL FILE PATH: " + local_file_path)
                 success, hdfs_path = self.save_file_to_hdfs(hdfs_file_path, local_file_path)
                 if success:
                     hdfs_saved_files.append(hdfs_path)

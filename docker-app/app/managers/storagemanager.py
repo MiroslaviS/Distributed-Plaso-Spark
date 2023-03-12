@@ -116,6 +116,7 @@ class StorageManager:
 
             elif is_compressed:
                 # decompress file
+                self.log("COMPRESSED FILE! " + compression_source_path_spec)
                 saved_file = self._extract_compressed_file(compression_source_path_spec)
                 delete_file = True
                 extracted_files.append(saved_file)
