@@ -1,0 +1,3 @@
+[submodule "plaso_project"]
+	path = plaso_project
+	url = https://github.com/log2timeline/plaso
