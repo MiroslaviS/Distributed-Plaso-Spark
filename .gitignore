@@ -130,3 +130,5 @@ dmypy.json
 services/volumes/
 
 docker-app/app/upload_processed/
+
+test_data/
