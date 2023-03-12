@@ -23,10 +23,10 @@ RUN apt install -y python3.7 \
     && apt-get install -y python3.7-dev \
     && python3.7 -m pip install --upgrade pip
 
-#RUN python3.7 -m pip install 'pytsk3==20230125'
-
 RUN python3.7 -m pip install Flask pyarrow dfvfs python-libarchive \
-    && python3.7 -m pip install pyspark
+    && python3.7 -m pip install pyspark findspark
+
+RUN python3.7 -m pip install -r /app/plaso/requirements.txt
 
 # Plaso tools needs to be installed as last, bcs of different pytsk3 version installed by plaso packages
 RUN apt-get install -y plaso-tools
