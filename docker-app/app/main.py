@@ -28,17 +28,42 @@ def main_page():
 
 @app.route('/extract')
 def spark():
-    plasoSpark = SparkPlaso(app.logger.warning)
-    #
-    files = plasoSpark.extract().collect()
-    # from lib.spark_scripts import get_signature_parser
-    # from dfvfshadoop.hdfs_path_specification import HDFSPathSpec
-    # x = HDFSPathSpec(location='/applesystemlog.asl')
-    # app.logger.warning(str(x.HasParent()))
-    #
-    # aa = get_signature_parser(x)
 
-    return make_response({'files': files}, 200)
+    # from lib.hdfs import Hdfs
+    # hdfs = Hdfs()
+    # hdfs.open_filesystem("namenode")
+    #
+    # file = hdfs.open_inputstream("/image_vhd/passwords.txt")
+    #
+    # app.logger.warning("FILE SIZE: " + str(file.readall()))
+    #
+    # file.close()
+
+    plasoSpark = SparkPlaso(app.logger.warning)
+
+    plasoSpark.create_files_path_spec_rdd()
+    plasoSpark.create_file_entry_rdd()
+
+    xx = plasoSpark.test()
+
+    app.logger.warning(str(xx))
+    #
+    # plasoSpark.create_files_path_spec_rdd()
+    # plasoSpark.create_file_entry_rdd()
+    # xx = plasoSpark.check_metadata_files()
+    # xx = xx.map(lambda x: (x[0]._location, x[1])).collect()
+    #
+    # # xx = [(file._location, metadata) for file, metadata in xx]
+    # return make_response({"metadata": xx}, 200)
+
+    # signatures = plasoSpark.calculate_signature_parsers().map(lambda x: (x[0]._location, x[1])).collect()
+    #
+    # signatures = [(location, parser) for location,parser in signatures]
+    #
+    # app.logger.warning("SIGNATURES FOR FILES: " + signatures)
+    #
+    #
+    # return make_response({'files': signatures}, 200)
 
 
 @app.route("/testing_dfvfs")
