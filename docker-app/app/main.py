@@ -22,9 +22,11 @@ from plaso.helpers.language_tags import LanguageTagHelper
 from plasospark.sparkplaso import SparkPlaso
 from dfvfs.resolver.context import Context
 
+
 @app.route("/")
 def main_page():
     return "Ahooj2"
+
 
 @app.route('/extract')
 def spark():
@@ -43,10 +45,17 @@ def spark():
 
     plasoSpark.create_files_path_spec_rdd()
     plasoSpark.create_file_entry_rdd()
+    plasoSpark.calculate_signature_parsers()
 
+    # parser = plasoSpark.filter_signature_parsers()
+    # signatures = signatures.map(lambda x: f"{x[0]} with parser {x[1]}")
     xx = plasoSpark.test()
 
-    app.logger.warning(str(xx))
+    app.logger.warning(xx.NAME)
+    # xx = signatures.collect()
+    # for x in xx:
+    #     app.logger.warning(x)
+    # app.logger.warning(str(signatures))
     #
     # plasoSpark.create_files_path_spec_rdd()
     # plasoSpark.create_file_entry_rdd()
@@ -63,7 +72,7 @@ def spark():
     # app.logger.warning("SIGNATURES FOR FILES: " + signatures)
     #
     #
-    # return make_response({'files': signatures}, 200)
+    return make_response({'files': xx}, 200)
 
 
 @app.route("/testing_dfvfs")
@@ -107,6 +116,7 @@ def upload_files():
     local_storage.preprocess_files()
     return make_response({"status": "OK, preprocessing before HDFS started", "saved_files": saved_files}, 200)
 
+
 @app.route("/upload/file")
 def upload_file():
     if 'file' not in request.files:
@@ -118,18 +128,13 @@ def upload_file():
     local_storage.preprocess_files()
     return make_response({"status": "OK, preprocessing before HDFS started", "saved_file": filename}, 200)
 
+
 @app.route("/upload/hdfs")
 def upload_to_hdfs():
     result = local_storage.upload_to_hdfs()
 
     return make_response({"status": "OK", "result": result}, 200)
 
-@app.route("/extract")
-def start_extraction():
-    findspark.init()
-    from pyspark import SparkContext
-    sc = SparkContext()
-    app.logger.warning(sc)
 
 if __name__ == "__main__":
     # from pyspark.sql import SparkSession

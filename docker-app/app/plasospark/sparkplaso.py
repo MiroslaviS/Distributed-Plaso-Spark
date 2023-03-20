@@ -44,19 +44,12 @@ class SparkPlaso(log2timeline_tool.Log2TimelineTool):
         self.sc.addPyFile('spark_dep/mediators.zip')
 
     def test(self):
-        from plaso.parsers.asl import ASLParser
-        parser = ASLParser()
+        extractor = self.extraction_engine._extraction_worker._event_extractor._parsers
 
-        knowledge_base = self.extraction_engine.knowledge_base
-        self.file_entries_rdd = self.file_entries_rdd.filter(lambda x: x._location == "/applesystemlog.asl")
-        xx = self.file_entries_rdd.map(lambda x: x._location).collect()
+        rdd = self.sc.parallelize([extractor])
+        rdd2 = rdd.map(lambda x: x.get("asl_log"))
 
-        bb = self.file_entries_rdd.map(lambda x: (parser, x, knowledge_base))
-
-        from lib.spark_scripts import parse
-        xx = bb.map(parse)
-
-        return xx.collect()
+        return rdd2.collect()
 
     def create_files_path_spec_rdd(self):
         entries = self.hdfs_file_system.ListFileSystem()
@@ -90,6 +83,23 @@ class SparkPlaso(log2timeline_tool.Log2TimelineTool):
 
         return self.rdd_signature_parsers
 
+    def filter_signature_parsers(self):
+        non_sig = self.extraction_engine._extraction_worker._event_extractor._non_sigscan_parser_names
+
+        non_sig_files = self.rdd_signature_parsers.filter(lambda x: len(x[1]) == 0)
+        non_sig_ext = non_sig_files.map(lambda x: (x[0], non_sig))
+
+        sig_files = self.rdd_signature_parsers.filter(lambda x: len(x[1]) != 0)
+
+        from lib.spark_scripts import expand_file_parsers
+        sig_rdd = sig_files.flatMap(expand_file_parsers)
+        non_sig_rdd = non_sig_ext.flatMap(expand_file_parsers)
+
+        all_files_rdd = sig_rdd.union(non_sig_rdd)
+
+        return all_files_rdd
+
+
     def check_metadata_files(self):
         from lib.spark_scripts import check_if_metadata
         config_parser = self.configuration.parser_filter_expression
@@ -109,7 +119,9 @@ class SparkPlaso(log2timeline_tool.Log2TimelineTool):
                                                                             self.configuration)
 
         from plaso.engine import worker
+
         self.extraction_engine._extraction_worker = worker.EventExtractionWorker(parser_filter_expression=self.configuration.parser_filter_expression)
+
 
     def create_plaso_configuration(self):
         """
