@@ -4,6 +4,7 @@ from lib.hdfs import Hdfs
 from dfvfs.lib.errors import PathSpecError, BackEndError
 import os
 
+
 class HDFSFile(FileIO):
     def __init__(self, resolver_context, path_spec):
         super(HDFSFile, self).__init__(resolver_context, path_spec)

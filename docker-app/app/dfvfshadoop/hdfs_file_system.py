@@ -6,6 +6,7 @@ from dfvfs.lib import errors
 from dfvfshadoop.hdfs_file_entry import HDFSFileEntry
 from dfvfshadoop.hdfs_path_specification import HDFSPathSpec
 
+
 class HDFSFileSystem(FileSystem):
     TYPE_INDICATOR = TYPE_INDICATOR_HDFS
     PATH_SEPARATOR = '/'

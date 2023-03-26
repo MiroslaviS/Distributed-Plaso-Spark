@@ -23,35 +23,17 @@ from plasospark.sparkplaso import SparkPlaso
 from dfvfs.resolver.context import Context
 
 
-@app.route("/")
+@app.route("/test")
 def main_page():
     return "Ahooj2"
 
 
 @app.route('/extract')
 def spark():
-
-    # from lib.hdfs import Hdfs
-    # hdfs = Hdfs()
-    # hdfs.open_filesystem("namenode")
-    #
-    # file = hdfs.open_inputstream("/image_vhd/passwords.txt")
-    #
-    # app.logger.warning("FILE SIZE: " + str(file.readall()))
-    #
-    # file.close()
-
     plasoSpark = SparkPlaso(app.logger.warning)
+    events = plasoSpark.extraction().collect()
 
-    plasoSpark.create_files_path_spec_rdd()
-    plasoSpark.create_file_entry_rdd()
-    plasoSpark.calculate_signature_parsers()
-
-    # parser = plasoSpark.filter_signature_parsers()
-    # signatures = signatures.map(lambda x: f"{x[0]} with parser {x[1]}")
-    xx = plasoSpark.test()
-
-    app.logger.warning(xx.NAME)
+    # app.logger.warning(xx.NAME)
     # xx = signatures.collect()
     # for x in xx:
     #     app.logger.warning(x)
@@ -72,7 +54,7 @@ def spark():
     # app.logger.warning("SIGNATURES FOR FILES: " + signatures)
     #
     #
-    return make_response({'files': xx}, 200)
+    return make_response({"no_events": len(events), 'events': events}, 200)
 
 
 @app.route("/testing_dfvfs")
@@ -82,7 +64,7 @@ def test():
 
     file_system = Resolver.OpenFileSystem(hdfs_path_spec)
 
-    location_file = '/image_vhd/passwords.txt'
+    location_file = '/syslog'
     file_path_spec = Factory.NewPathSpec(TYPE_INDICATOR_HDFS, location=location_file)
     file = file_system.GetFileEntryByPathSpec(file_path_spec)
 
