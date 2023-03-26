@@ -122,7 +122,7 @@ if __name__ == "__main__":
     # from pyspark.sql import SparkSession
     # spark = SparkSession.builder.appName("PySpark Plaso").getOrCreate()
     # sc = spark.sparkContext
-    # sc.addPyFile('spark_dep/lib.zip')
+    # sc.addPyFile('spark_dep/helpers.zip')
     # sc.addPyFile('spark_dep/site-packages.zip')
     # sc.addPyFile('spark_dep/dfvfshadoop.zip')
 

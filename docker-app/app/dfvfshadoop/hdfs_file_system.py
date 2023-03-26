@@ -1,7 +1,7 @@
 
 from dfvfs.vfs.file_system import FileSystem
 from dfvfshadoop.definitions import TYPE_INDICATOR_HDFS
-from lib.hdfs import Hdfs
+from helpers.hdfs import Hdfs
 from dfvfs.lib import errors
 from dfvfshadoop.hdfs_file_entry import HDFSFileEntry
 from dfvfshadoop.hdfs_path_specification import HDFSPathSpec

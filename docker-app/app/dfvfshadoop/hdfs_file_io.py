@@ -1,6 +1,6 @@
 
 from dfvfs.file_io.file_io import FileIO
-from lib.hdfs import Hdfs
+from helpers.hdfs import Hdfs
 from dfvfs.lib.errors import PathSpecError, BackEndError
 import os
 
