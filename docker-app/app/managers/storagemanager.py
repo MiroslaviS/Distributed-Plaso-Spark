@@ -1,19 +1,11 @@
 import os
 
-import dfvfs.encoding.decoder
-from dfvfs.credentials import manager as credentials_manager
 from dfvfs.lib import definitions
 from dfvfs.lib import errors
-from dfvfs.helpers import source_scanner
-from dfvfs.helpers import windows_path_resolver
 from dfvfs.path import factory as path_spec_factory
-from dfvfs.resolver import resolver
-from dfvfs.volume import factory as volume_system_factory
 from dfvfs.helpers import source_scanner
 from dfvfs.analyzer import analyzer as dfvfs_analyzer
 from dfvfs.resolver import context as dfvfs_context
-from dfvfs.compression import xz_decompressor
-import zipfile
 import libarchive
 
 class StorageManager:

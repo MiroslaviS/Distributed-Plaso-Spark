@@ -4,6 +4,7 @@ from managers.storagemanager import StorageManager
 from multiprocessing import Process
 from pyarrow import fs, input_stream
 
+
 class LocalStorageManager(StorageManager):
     def __init__(self, app):
         super(LocalStorageManager, self).__init__(app.config['UPLOAD_FOLDER'], app.config['PREPROCESSED_FOLDER'], app.logger)

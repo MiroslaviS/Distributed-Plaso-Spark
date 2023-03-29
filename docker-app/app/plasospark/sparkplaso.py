@@ -1,39 +1,50 @@
 
-from dfvfshadoop.definitions import TYPE_INDICATOR_HDFS
-from dfvfs.resolver.resolver import Resolver
-from dfvfs.path.factory import Factory
-from dfvfshadoop.hdfs_path_specification import HDFSPathSpec
-from plaso.cli import log2timeline_tool
-from plaso.cli.log2timeline_tool import Log2TimelineTool
-
 from plasospark.plasowrapper import PlasoWrapper
 from plasospark.sparkjobs import SparkJobFactory
+from managers.distributedmanager import DistributedFileManager
+from formatters.json import JsonFormatter
 
-class SparkPlaso(log2timeline_tool.Log2TimelineTool):
+
+class SparkPlaso:
     def __init__(self, logger):
-        super(SparkPlaso, self).__init__()
-
         self.plaso = PlasoWrapper()
         self.job_factory = SparkJobFactory(self.plaso, logger)
-
-        hdfs_path_spec = Factory.NewPathSpec(TYPE_INDICATOR_HDFS, location='namenode')
-        self.hdfs_file_system = Resolver.OpenFileSystem(hdfs_path_spec)
+        self.storage_manager = DistributedFileManager()
 
         self.logger = logger
+        self.formatter = JsonFormatter()
 
         self.file_entries_rdd = None
         self.path_specs_rdd = None
         self.signature_parsers_rdd = None
         self.extraction_files_rdd = None
         self.events_rdd = None
+        self.formatted_events_rdd = None
 
     def extraction(self):
-        self.path_specs_rdd = self.job_factory.create_files_path_spec_rdd(self.hdfs_file_system)
+        self._list_hdfs_files()
+
         self.file_entries_rdd = self.job_factory.create_file_entry_rdd(self.path_specs_rdd)
         self.signature_parsers_rdd = self.job_factory.create_signature_parsers(self.file_entries_rdd)
         self.extraction_files_rdd = self.job_factory.filter_signature_parsers(self.signature_parsers_rdd)
         self.events_rdd = self.job_factory.create_events_from_rdd(self.extraction_files_rdd)
 
-        return self.events_rdd
+        self.formatted_events_rdd = self.job_factory.create_formatted_rdd(self.events_rdd, self.formatter)
 
+        return self.formatted_events_rdd
 
+    def test(self):
+        self._list_hdfs_files()
+
+        self.event_source_rdd = self.job_factory.create_event_source_rdd(self.path_specs_rdd)
+        self.event_data_stream_rdd = self.job_factory.create_stream_data_event(self.path_specs_rdd)
+
+        return self.event_source_rdd
+
+    def process_plaso_event_sources(self):
+        event_sources = self.event_source_rdd.collect()
+        self.plaso.add_event_source(event_sources)
+
+    def _list_hdfs_files(self):
+        files = self.storage_manager.get_files()
+        self.path_specs_rdd = self.job_factory.create_files_path_spec_rdd(files)

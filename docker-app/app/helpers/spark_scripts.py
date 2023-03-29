@@ -24,6 +24,24 @@ def check_if_metadata(file_rdd):
     return file_entry, extraction_worker._IsMetadataFile(file_entry)
 
 
+def create_event_sources(path_spec):
+    from plaso.containers import event_sources
+    from dfvfshadoop.definitions import TYPE_INDICATOR_HDFS
+
+    event_source = event_sources.FileEntryEventSource(
+        file_entry_type=TYPE_INDICATOR_HDFS,
+        path_spec=path_spec
+    )
+
+    return event_source
+
+def create_data_stream_event(path_spec):
+    from plaso.containers import events
+    data_stream_event = events.EventDataStream()
+    data_stream_event.path_spec = path_spec
+
+    return data_stream_event
+
 def get_signature_parser(signature_rdd):
     file_entry, parser_filter_expression = signature_rdd
 
@@ -36,15 +54,6 @@ def get_signature_parser(signature_rdd):
     parser_names = extractor._GetSignatureMatchParserNames(file_object)
 
     return file_entry, parser_names
-
-
-def json_dumper(obj):
-    if not hasattr(obj, '__dict__'):
-        return str(obj)
-
-    result = obj.__dict__
-
-    return result
 
 
 def expand_file_parsers(file_signature):
@@ -73,6 +82,7 @@ def parse(parsing_rdd):
     parser = parsers.get(parser_name)
 
     file_object = file_entry.GetFileObject()
+
     mediator = spark_mediator.ParserMediator()
     mediator.SetFileEntry(file_entry)
 

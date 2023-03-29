@@ -132,3 +132,5 @@ services/volumes/
 docker-app/app/upload_processed/
 
 test_data/
+
+docker-app/app/plaso/

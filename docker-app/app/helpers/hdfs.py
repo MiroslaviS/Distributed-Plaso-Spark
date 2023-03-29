@@ -56,6 +56,22 @@ class Hdfs:
 
         return file
 
+    def create_file(self, path, data):
+        data_encoded = data.encode(encoding='UTF-8')
+        with self.fs.open_output_stream(path) as hdfs_file:
+            hdfs_file.write(data_encoded)
+            hdfs_file.flush()
 
+    def open_file(self, path):
+        file = self.fs.open_output_stream(path)
 
+        return file
 
+    def create_folder(self, path):
+        self.fs.create_dir(path, recursive=True)
+
+    def delete_folder(self, path):
+        self.fs.delete_dir(path)
+
+    def delete_file(self, path):
+        self.fs.delete_file(path)

@@ -3,8 +3,8 @@ from dfvfs.vfs.file_system import FileSystem
 from dfvfshadoop.definitions import TYPE_INDICATOR_HDFS
 from helpers.hdfs import Hdfs
 from dfvfs.lib import errors
-from dfvfshadoop.hdfs_file_entry import HDFSFileEntry
-from dfvfshadoop.hdfs_path_specification import HDFSPathSpec
+from dfvfs.path.hdfs_file_entry import HDFSFileEntry
+from dfvfs.path.hdfs_path_specification import HDFSPathSpec
 
 
 class HDFSFileSystem(FileSystem):

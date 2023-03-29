@@ -1,6 +1,7 @@
 import findspark
 from pyspark.sql import SparkSession
 from dfvfshadoop.hdfs_path_specification import HDFSPathSpec
+import json
 
 
 class SparkJobFactory:
@@ -17,11 +18,21 @@ class SparkJobFactory:
         self.sc.addPyFile('spark_dep/dfvfshadoop.zip')
         self.sc.addPyFile('spark_dep/helpers.zip')
         self.sc.addPyFile('spark_dep/mediators.zip')
+        self.sc.addPyFile('spark_dep/formatters.zip')
 
-    def create_files_path_spec_rdd(self, hdfs_file_system):
-        entries = hdfs_file_system.ListFileSystem()
-        files = hdfs_file_system.GetOnlyFiles(entries)
+    def create_event_source_rdd(self, path_specs):
+        from helpers.spark_scripts import create_event_sources
+        event_sources_rdd = path_specs.map(create_event_sources)
 
+        return event_sources_rdd
+
+    def create_stream_data_event(self, path_specs):
+        from helpers.spark_scripts import create_data_stream_event
+        data_stream_event_rdd = path_specs.map(create_data_stream_event)
+
+        return data_stream_event_rdd
+
+    def create_files_path_spec_rdd(self, files):
         rdd_files = self.sc.parallelize(files)
         rdd_path_specs = rdd_files.map(lambda x: HDFSPathSpec(location=x))
 
@@ -50,18 +61,16 @@ class SparkJobFactory:
         return rdd_signature_parsers
 
     def create_events_from_rdd(self, all_files_rdd):
-        import json
         from helpers.spark_scripts import parse
 
-        event_rdd = all_files_rdd.flatMap(parse)
+        events_rdd = all_files_rdd.flatMap(parse)
 
-        from helpers.spark_scripts import json_dumper
+        return events_rdd
 
-        json_events = event_rdd.map(lambda event: json.dumps(event,
-                                                             default=json_dumper,
-                                                             indent=4,
-                                                             sort_keys=True))
-        return json_events
+    def create_formatted_rdd(self, events_rdd, formatter):
+        formatted_rdd = events_rdd.map(formatter.format)
+
+        return formatted_rdd
 
     def filter_signature_parsers(self, signature_parsers_rdd):
         non_sig = self.plaso.get_nonsig_parsers()

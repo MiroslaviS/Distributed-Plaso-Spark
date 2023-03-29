@@ -21,6 +21,7 @@ from dfvfshadoop.definitions import TYPE_INDICATOR_HDFS
 from plaso.helpers.language_tags import LanguageTagHelper
 from plasospark.sparkplaso import SparkPlaso
 from dfvfs.resolver.context import Context
+from managers.distributedmanager import DistributedFileManager
 
 
 @app.route("/test")
@@ -30,8 +31,32 @@ def main_page():
 
 @app.route('/extract')
 def spark():
+    # from managers.distributedmanager import DistributedFileManager
+    #
+    # manager = DistributedFileManager()
+    # file = manager.open_file("/applesystemlog.asl")
+
+    # manager.create_folder("/testing_folder2")
+    #
+    # manager.save_file("/testing", data="Jezis je superko")
+    # foo = manager.list_folder("/")
+    # xx = list()
+    #
+    # for file in foo:
+    #     xx.append(file.path)
+
+
     plasoSpark = SparkPlaso(app.logger.warning)
-    events = plasoSpark.extraction().collect()
+
+    event_sources = plasoSpark.test()
+    plasoSpark.process_plaso_event_sources()
+
+    plasoSpark.plaso.create_plaso_complete_containers()
+
+    plasoSpark.plaso.storage_writer.Close()
+
+
+    # events = plasoSpark.extraction()
 
     # app.logger.warning(xx.NAME)
     # xx = signatures.collect()
@@ -54,7 +79,7 @@ def spark():
     # app.logger.warning("SIGNATURES FOR FILES: " + signatures)
     #
     #
-    return make_response({"no_events": len(events), 'events': events}, 200)
+    return make_response({'events': "OK"}, 200)
 
 
 @app.route("/testing_dfvfs")
