@@ -134,3 +134,5 @@ docker-app/app/upload_processed/
 test_data/
 
 docker-app/app/plaso/
+
+docker-app/app/upload_no_process/

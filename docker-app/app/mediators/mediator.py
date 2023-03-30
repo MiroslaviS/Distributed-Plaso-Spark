@@ -37,7 +37,7 @@ class ParserMediator:
             self._cached_parser_chain = '/'.join(self._parser_chain_components)
         return self._cached_parser_chain
 
-    def ProduceEventWithEventData(self, event, event_data):
+    def ProduceEventData(self, event_data):
         parser_name = self.GetParserChain()
         event_data.parser = parser_name
         self.event_queue.append(event_data)
@@ -55,4 +55,10 @@ class ParserMediator:
           name (str): name of a parser or parser plugin.
         """
         self._cached_parser_chain = None
-        self._parser_chain_components.append(parser.NAME)
+        self._parser_chain_components.append(parser)
+
+    def SampleStartTiming(self, parser_chain):
+        return
+
+    def SampleStopTiming(self, parser_chain):
+        return

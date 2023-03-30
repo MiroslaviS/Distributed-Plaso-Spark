@@ -68,7 +68,7 @@ services:
 
   sparkmaster:
 #    image: registry.gitlab.com/rychly-edu/docker/docker-spark:2.4.4-hadoop3.2
-    image: spark-test3
+    image: spark
     environment:
       - ROLE=master
       - MASTER_PORT=7077
@@ -80,7 +80,7 @@ services:
   sparkworker:
     # hadoop 3.2.0 bug: missing lib/native/lihdfs.so, so cannot use pyarrow hdfs -> use hadoop 3.1.*
 #    image: registry.gitlab.com/rychly-edu/docker/docker-spark:2.4.4-hadoop3.2
-    image: spark-test3
+    image: spark
     # to restart lost workers (i.e., workers exited with after a task or on a failure when asked to kill an executor)
     restart: always
     environment:
@@ -91,7 +91,8 @@ services:
 #      - "4040:4041"
 
   sparkapp:
-    image: sparkapp-plaso
+    image: sparkapp
+#    image: application
     environment:
       - MASTER_URL=spark://sparkmaster:7077
       - SPARK_JARS=/app/lib
@@ -101,6 +102,8 @@ services:
     ports:
       - "4040:4040"
       - "5000:5000"
+#    entrypoint: tail -F /dev/null
+
     volumes:
       - ..\docker-app\app:/app
     working_dir: /app

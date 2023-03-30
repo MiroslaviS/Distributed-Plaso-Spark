@@ -1,4 +1,4 @@
-from dfvfshadoop.definitions import TYPE_INDICATOR_HDFS
+from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS
 
 from dfdatetime import posix_time as dfdatetime_posix_time
 

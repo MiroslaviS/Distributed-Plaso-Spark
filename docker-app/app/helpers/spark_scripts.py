@@ -43,13 +43,18 @@ def create_data_stream_event(path_spec):
     return data_stream_event
 
 def get_signature_parser(signature_rdd):
+    """
+
+    :param signature_rdd:
+    :return: file_entry, parser_names
+    """
     file_entry, parser_filter_expression = signature_rdd
 
     # Get File object from file_entry
     file_object = file_entry.GetFileObject()
 
     # Calculate parser names for file_object
-    extractor = extractors.EventExtractor(parser_filter_expression=parser_filter_expression)
+    extractor = extractors.EventDataExtractor(parser_filter_expression=parser_filter_expression)
 
     parser_names = extractor._GetSignatureMatchParserNames(file_object)
 
@@ -57,9 +62,16 @@ def get_signature_parser(signature_rdd):
 
 
 def expand_file_parsers(file_signature):
+    """
+
+    :param file_signature:
+    :return: [(path_spec, parser)]
+    """
     file_entry, parsers = file_signature
     file_parsers = []
 
+    if isinstance(parsers, set):
+        parsers = list(parsers)
 
     # Add filestat parser if not presented in
     # parsers after creating signature
@@ -94,7 +106,7 @@ def parse(parsing_rdd):
         elif isinstance(parser, parsers_interface.FileObjectParser):
             parser.Parse(mediator, file_object)
     except:
-        return None
+        return []
     finally:
         file_object._Close()
 

@@ -45,11 +45,16 @@ def spark():
     # for file in foo:
     #     xx.append(file.path)
 
-
+    print("ahoj")
     plasoSpark = SparkPlaso(app.logger.warning)
 
+    formated_events = plasoSpark.extraction().collect()
+
     event_sources = plasoSpark.test()
+
     plasoSpark.process_plaso_event_sources()
+    plasoSpark.process_plaso_data_streams()
+    no_events = plasoSpark.process_event_data()
 
     plasoSpark.plaso.create_plaso_complete_containers()
 
@@ -79,7 +84,7 @@ def spark():
     # app.logger.warning("SIGNATURES FOR FILES: " + signatures)
     #
     #
-    return make_response({'events': "OK"}, 200)
+    return make_response({'events': formated_events, 'test': no_events}, 200)
 
 
 @app.route("/testing_dfvfs")

@@ -15,4 +15,4 @@ class HDFSResolverHelper(ResolverHelper):
         return HDFSFileSystem(resolver_context, path_spec)
 
 
-manager.ResolverHelperManager.RegisterHelper(HDFSResolverHelper())
+# manager.ResolverHelperManager.RegisterHelper(HDFSResolverHelper())

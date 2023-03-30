@@ -47,22 +47,30 @@ class SparkJobFactory:
         return file_entries_rdd
 
     def create_signature_parsers(self, file_entries_rdd):
+        """
+
+        :param file_entries_rdd:
+        :return: (file_entry, [parser_names]): RDD
+        """
         from helpers.spark_scripts import get_signature_parser
 
         config_parser = self.plaso.get_filter_expression()
 
-        self.logger("Available parser filter expression: " + config_parser)
+        # self.logger("Available parser filter expression: " + config_parser)
 
         # Map configuration to file entry in RDD
         signature_rdd = file_entries_rdd.map(lambda x: (x, config_parser))
+        self.logger("Calculated signatures for file entries")
 
         rdd_signature_parsers = signature_rdd.map(get_signature_parser)
+        self.logger("Calculated parsers from from file entries signatures")
 
         return rdd_signature_parsers
 
     def create_events_from_rdd(self, all_files_rdd):
         from helpers.spark_scripts import parse
 
+        self.logger("Starting parsing on RDDs")
         events_rdd = all_files_rdd.flatMap(parse)
 
         return events_rdd
@@ -73,11 +81,20 @@ class SparkJobFactory:
         return formatted_rdd
 
     def filter_signature_parsers(self, signature_parsers_rdd):
+        """
+
+        :param signature_parsers_rdd:
+        :return: [(path_spec, parser)]
+        """
         non_sig = self.plaso.get_nonsig_parsers()
 
+        # Get files without signed signature for parsers
         non_sig_files = signature_parsers_rdd.filter(lambda x: len(x[1]) == 0)
+
+        # Create tuple RDD with file and assigned non sig parsers
         non_sig_ext = non_sig_files.map(lambda x: (x[0], non_sig))
 
+        # Get files with signed signature for parsers
         sig_files = signature_parsers_rdd.filter(lambda x: len(x[1]) != 0)
 
         from helpers.spark_scripts import expand_file_parsers

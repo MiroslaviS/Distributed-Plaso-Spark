@@ -23,4 +23,4 @@ class HDFSPathSpec(LocationPathSpec):
         super(HDFSPathSpec, self).__init__(location=location, parent=parent, **kwargs)
 
 
-factory.Factory.RegisterPathSpec(HDFSPathSpec)
+# factory.Factory.RegisterPathSpec(HDFSPathSpec)
