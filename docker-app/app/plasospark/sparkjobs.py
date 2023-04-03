@@ -2,17 +2,24 @@ import findspark
 from pyspark.sql import SparkSession
 from dfvfshadoop.hdfs_path_specification import HDFSPathSpec
 import json
-
+from pyspark import SparkConf
 
 class SparkJobFactory:
     def __init__(self, plaso, logger):
         findspark.init()
-        spark = SparkSession.builder.appName("PySpark Plaso").getOrCreate()
+        conf = SparkConf()
+        conf.set("spark.executor.memory", "4g")
+        spark = SparkSession.builder.appName("PySpark Plaso").config("spark.executor.memory", "4g").getOrCreate()
         self.sc = spark.sparkContext
         self.plaso = plaso
         self.logger = logger
 
         self.upload_spark_dep()
+
+    def test(self, configuration):
+        foo = self.sc.parallelize([configuration])
+
+        return foo
 
     def upload_spark_dep(self):
         self.sc.addPyFile('spark_dep/dfvfshadoop.zip')
@@ -56,7 +63,7 @@ class SparkJobFactory:
 
         config_parser = self.plaso.get_filter_expression()
 
-        # self.logger("Available parser filter expression: " + config_parser)
+        self.logger("Available parser filter expression: " + config_parser)
 
         # Map configuration to file entry in RDD
         signature_rdd = file_entries_rdd.map(lambda x: (x, config_parser))
@@ -67,11 +74,18 @@ class SparkJobFactory:
 
         return rdd_signature_parsers
 
+    def split_events_rdd(self, extraction_result_rdd):
+        events_rdd = extraction_result_rdd.flatMap(lambda x: x[0])
+        warnings_rdd = extraction_result_rdd.flatMap(lambda x: x[1])
+        recoveries_rdd = extraction_result_rdd.flatMap(lambda x: x[2])
+
+        return events_rdd, warnings_rdd, recoveries_rdd
+
     def create_events_from_rdd(self, all_files_rdd):
         from helpers.spark_scripts import parse
 
         self.logger("Starting parsing on RDDs")
-        events_rdd = all_files_rdd.flatMap(parse)
+        events_rdd = all_files_rdd.map(parse)
 
         return events_rdd
 
