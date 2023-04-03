@@ -9,7 +9,7 @@ import collections
 from plaso.containers import counts
 
 class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
-    def __init__(self):
+    def __init__(self, storage_file='/output.plaso'):
         super(PlasoWrapper, self).__init__()
 
         self._artifact_definitions_path = '/app/plaso/share_artifacts/artifacts/'
@@ -21,10 +21,8 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
         self.storage_writer = None
         self.session = None
 
-        self.storage_file_path = "/output.plaso"
+        self.storage_file_path = storage_file
         self.create_extraction_configs()
-        self.create_plaso_start_containers()
-
 
     def create_extraction_configs(self):
         self.ParseArguments(['--debug', '--single-process'])
@@ -51,6 +49,16 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
         self.extraction_engine._parsers_counter = collections.Counter({
                                                 parser_count.name: parser_count
                                                 for parser_count in self.storage_writer.GetAttributeContainers('parser_count')})
+
+    def create_mediator_holder(self):
+        from mediators import holder
+
+        mediator_holder = holder.MediatorHolder(self.extraction_engine.knowledge_base,
+                                                self.configuration,
+                                                self.extraction_engine.collection_filters_helper)
+
+        return mediator_holder
+
     def create_plaso_start_containers(self):
         self.session = engine.BaseEngine.CreateSession()
         enabled_parsers = self._expanded_parser_filter_expression.split(',')
@@ -82,6 +90,18 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
         session_completed = self.session.CreateSessionCompletion()
         self.storage_writer.AddAttributeContainer(session_completed)
 
+        self.storage_writer.Close()
+
+    def create_plaso_warning_containers(self, warning_sources):
+        for warning in warning_sources:
+            self.storage_writer.AddAttributeContainer(warning)
+            self.parser_mediator._number_of_extraction_warnings += 1
+
+    def create_plaso_recovery_containers(self, recovery_sources):
+        for recovery in recovery_sources:
+            self.storage_writer.AddAttributeContainer(recovery)
+            self.parser_mediator._number_of_recovery_warnings += 1
+
     def add_event_source(self, event_sources):
         for event_source in event_sources:
             self.parser_mediator.ProduceEventSource(event_source)
@@ -90,9 +110,28 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
         for stream_event in event_data_streams:
             self.parser_mediator.ProduceEventDataStream(stream_event)
 
-    def add_event(self, event_data):
+    def add_event(self, event_data, data_streams):
         parsers = []
+        active_data_stream = None
+
         for event in event_data:
+            if not active_data_stream:
+                for stream in data_streams:
+                    if stream.path_spec.location == event.spark_file_location:
+                        active_data_stream = stream
+                        break
+                self.parser_mediator.ProduceEventDataStream(active_data_stream)
+
+
+            else:
+                if event.spark_file_location != active_data_stream.path_spec.location:
+                    for stream in data_streams:
+                        if stream.path_spec.location == event.spark_file_location:
+                            active_data_stream = stream
+                            break
+
+                    self.parser_mediator.ProduceEventDataStream(active_data_stream)
+
             parsers.append(self.parser_mediator.ProduceEventData(event))
 
         return parsers

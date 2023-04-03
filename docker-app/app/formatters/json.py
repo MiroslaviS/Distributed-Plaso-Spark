@@ -2,8 +2,11 @@
 from formatters.interface import Formatter
 import json
 
+from formatters.manager import FormatterManager
 
 class JsonFormatter(Formatter):
+    NAME = 'json'
+
     def format(self, event):
         json_event = json.dumps(event,
                                 default=self._json_dump,
@@ -20,3 +23,5 @@ class JsonFormatter(Formatter):
 
         return result
 
+
+FormatterManager.register(JsonFormatter)

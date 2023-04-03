@@ -23,7 +23,6 @@ from plasospark.sparkplaso import SparkPlaso
 from dfvfs.resolver.context import Context
 from managers.distributedmanager import DistributedFileManager
 
-
 @app.route("/test")
 def main_page():
     return "Ahooj2"
@@ -31,90 +30,11 @@ def main_page():
 
 @app.route('/extract')
 def spark():
-    # from managers.distributedmanager import DistributedFileManager
-    #
-    # manager = DistributedFileManager()
-    # file = manager.open_file("/applesystemlog.asl")
-
-    # manager.create_folder("/testing_folder2")
-    #
-    # manager.save_file("/testing", data="Jezis je superko")
-    # foo = manager.list_folder("/")
-    # xx = list()
-    #
-    # for file in foo:
-    #     xx.append(file.path)
-
-    print("ahoj")
     plasoSpark = SparkPlaso(app.logger.warning)
 
-    formated_events = plasoSpark.extraction().collect()
+    response = plasoSpark.extraction()
 
-    event_sources = plasoSpark.test()
-
-    plasoSpark.process_plaso_event_sources()
-    plasoSpark.process_plaso_data_streams()
-    no_events = plasoSpark.process_event_data()
-
-    plasoSpark.plaso.create_plaso_complete_containers()
-
-    plasoSpark.plaso.storage_writer.Close()
-
-
-    # events = plasoSpark.extraction()
-
-    # app.logger.warning(xx.NAME)
-    # xx = signatures.collect()
-    # for x in xx:
-    #     app.logger.warning(x)
-    # app.logger.warning(str(signatures))
-    #
-    # plasoSpark.create_files_path_spec_rdd()
-    # plasoSpark.create_file_entry_rdd()
-    # xx = plasoSpark.check_metadata_files()
-    # xx = xx.map(lambda x: (x[0]._location, x[1])).collect()
-    #
-    # # xx = [(file._location, metadata) for file, metadata in xx]
-    # return make_response({"metadata": xx}, 200)
-
-    # signatures = plasoSpark.calculate_signature_parsers().map(lambda x: (x[0]._location, x[1])).collect()
-    #
-    # signatures = [(location, parser) for location,parser in signatures]
-    #
-    # app.logger.warning("SIGNATURES FOR FILES: " + signatures)
-    #
-    #
-    return make_response({'events': formated_events, 'test': no_events}, 200)
-
-
-@app.route("/testing_dfvfs")
-def test():
-    location = 'namenode'
-    hdfs_path_spec = Factory.NewPathSpec(TYPE_INDICATOR_HDFS, location=location)
-
-    file_system = Resolver.OpenFileSystem(hdfs_path_spec)
-
-    location_file = '/syslog'
-    file_path_spec = Factory.NewPathSpec(TYPE_INDICATOR_HDFS, location=location_file)
-    file = file_system.GetFileEntryByPathSpec(file_path_spec)
-
-    app.logger.warning("FILE EXISTS: " + str(file_system.FileEntryExistsByPathSpec(file_path_spec)))
-    app.logger.warning("FILE NAME: " + file.name)
-    app.logger.warning("FILE SIZE: " + str(file.size))
-    app.logger.warning("FILE mtime: " + str(file.access_time))
-    app.logger.warning("FILE datastreams: " + str(file.data_streams))
-    paret_file_entry = file.GetParentFileEntry()
-
-    app.logger.warning("PARENT FILE: " + paret_file_entry.name)
-    dir = paret_file_entry._GetDirectory()
-
-    dir_gen = dir._EntriesGenerator()
-
-    for file in dir_gen:
-        app.logger.warning("LOCATION FROM DIRECTORY: " + str(type(file)))
-
-    file_system_root_entry = file_system.GetRootFileEntry()
-    app.logger.warning("ROOT ENTRY NAME: " + file_system_root_entry.name)
+    return make_response(response, 200)
 
 
 @app.route("/upload/files", methods=['POST'])

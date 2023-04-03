@@ -85,9 +85,14 @@ def expand_file_parsers(file_signature):
 
 
 def parse(parsing_rdd):
+    """
+
+    :param parsing_rdd:
+    :return: (event_queue, warning_queue, recovery_queue) : ([EventData], [EventWarning], [WarningRecovery])
+    """
     from plaso.parsers import manager as parsers_manager
 
-    path_spec, parser_name = parsing_rdd
+    path_spec, parser_name, mediator_data = parsing_rdd
     file_entry = path_resolver.Resolver.OpenFileEntry(path_spec)
 
     parsers = parsers_manager.ParsersManager.GetParserObjects()
@@ -95,7 +100,7 @@ def parse(parsing_rdd):
 
     file_object = file_entry.GetFileObject()
 
-    mediator = spark_mediator.ParserMediator()
+    mediator = spark_mediator.ParserMediator(mediator_data)
     mediator.SetFileEntry(file_entry)
 
     from plaso.parsers import interface as parsers_interface
@@ -106,9 +111,11 @@ def parse(parsing_rdd):
         elif isinstance(parser, parsers_interface.FileObjectParser):
             parser.Parse(mediator, file_object)
     except:
-        return []
+        # Do nothing on exception. Exceptions are raised when nonsig parser tries to parser
+        # not supported file entry.
+        pass
     finally:
         file_object._Close()
 
-    return mediator.event_queue
+    return mediator.event_queue, mediator.warning_queue, mediator.recovery_queue
     # return "[" + parser.NAME + "]" + path_spec.location, len(mediator.event_queue), len(mediator.warning_queue), len(mediator.recovery_queue)
