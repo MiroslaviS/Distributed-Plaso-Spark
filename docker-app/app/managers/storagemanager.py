@@ -64,6 +64,11 @@ class StorageManager:
 
         return list_files
 
+    def _remove_postupdate_files(self):
+        files = self._list_dir(self.preprocessed_folder)
+        for file in files:
+            self.delete_file(file)
+
     def _move_file(self, file_path):
         filename = file_path.split('/')[-1]
         destination = os.path.join(self.preprocessed_folder, filename)
@@ -108,7 +113,7 @@ class StorageManager:
 
             elif is_compressed:
                 # decompress file
-                self.log("COMPRESSED FILE! " + compression_source_path_spec)
+                # self.log("COMPRESSED FILE! " + compression_source_path_spec)
                 saved_file = self._extract_compressed_file(compression_source_path_spec)
                 delete_file = True
                 extracted_files.append(saved_file)
@@ -230,8 +235,11 @@ class StorageManager:
     def _save_compressed_data(self, data, file_path, folder_path):
         filename = file_path.split('/')[-1].split('.')[0]
         file_path = os.path.join(folder_path, filename)
+        import chardet
+
+        encoding_result = chardet.detect(data)
         with open(file_path, 'w') as f:
-            f.write(data.decode('utf-8'))
+            f.write(data.decode(encoding_result['encoding']))
 
         return file_path
 

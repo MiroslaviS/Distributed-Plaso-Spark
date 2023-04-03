@@ -39,9 +39,26 @@ class LocalStorageManager(StorageManager):
 
         self.uploaded_files = []
 
+    def delete_hdfs_files(self):
+        from helpers import hdfs
+        hdfs = hdfs.Hdfs()
+        hdfs.open_filesystem('namenode')
+
+        content = hdfs.list_files("/")
+        files = hdfs.get_only_files(content)
+
+        for file in files:
+            hdfs.delete_file(file)
+
+        folders = [entry.path for entry in content if entry.path not in files]
+
+        for folder in folders:
+            hdfs.delete_folder(folder)
+
+
     def upload_to_hdfs(self):
         hdfs_files = self._process_files_to_hdfs()
-
+        self._remove_postupdate_files()
         return hdfs_files
 
     def save_file_to_hdfs(self, hdfs_path, file_path):
