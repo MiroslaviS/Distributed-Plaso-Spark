@@ -1,8 +1,8 @@
 
 from formatters.interface import Formatter
+from formatters.manager import FormatterManager
 import json
 
-from formatters.manager import FormatterManager
 
 class JsonFormatter(Formatter):
     NAME = 'json'

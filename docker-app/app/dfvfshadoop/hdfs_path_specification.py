@@ -1,6 +1,6 @@
 
 from dfvfs.path.location_path_spec import LocationPathSpec
-from dfvfshadoop.definitions import TYPE_INDICATOR_HDFS
+from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS
 from dfvfs.path import factory
 
 
@@ -23,4 +23,4 @@ class HDFSPathSpec(LocationPathSpec):
         super(HDFSPathSpec, self).__init__(location=location, parent=parent, **kwargs)
 
 
-# factory.Factory.RegisterPathSpec(HDFSPathSpec)
+factory.Factory.RegisterPathSpec(HDFSPathSpec)

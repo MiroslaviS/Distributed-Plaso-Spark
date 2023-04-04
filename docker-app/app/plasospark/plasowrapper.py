@@ -29,7 +29,7 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
         self._expanded_parser_filter_expression = (self._GetExpandedParserFilterExpression(
                                                                         self.extraction_engine.knowledge_base))
         self.configuration = self._CreateExtractionProcessingConfiguration()
-        self.configuration.data_location = "/app/plaso/data"
+        self.configuration.data_location = "/plaso/data"
 
         self.parser_mediator = self.extraction_engine._CreateParserMediator(self.extraction_engine.knowledge_base,
                                                                             self._resolver_context,

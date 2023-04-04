@@ -1,8 +1,8 @@
 
 from dfvfs.resolver_helpers.resolver_helper import ResolverHelper
-from dfvfshadoop.definitions import TYPE_INDICATOR_HDFS
-from dfvfshadoop.hdfs_file_io import HDFSFile
-from dfvfshadoop.hdfs_file_system import HDFSFileSystem
+from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS
+from dfvfs.file_io.hdfs_file_io import HDFSFile
+from dfvfs.path.hdfs_file_system import HDFSFileSystem
 from dfvfs.resolver_helpers import manager
 
 class HDFSResolverHelper(ResolverHelper):
@@ -15,4 +15,4 @@ class HDFSResolverHelper(ResolverHelper):
         return HDFSFileSystem(resolver_context, path_spec)
 
 
-# manager.ResolverHelperManager.RegisterHelper(HDFSResolverHelper())
+manager.ResolverHelperManager.RegisterHelper(HDFSResolverHelper())

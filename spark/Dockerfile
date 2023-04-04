@@ -1,7 +1,7 @@
 FROM registry.gitlab.com/rychly-edu/docker/docker-spark:2.4.4-hadoop3.2
 
 COPY spark/entrypoint_start.sh /
-COPY docker-app/app/plaso_test /dfvfs_fs
+COPY docker-app/app/dfvfshadoop /dfvfs_fs
 COPY plaso_project /plaso
 
 RUN apt update \

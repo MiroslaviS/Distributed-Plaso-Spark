@@ -1,4 +1,4 @@
-from dfvfshadoop.definitions import TYPE_INDICATOR_HDFS
+from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS
 
 from dfdatetime import posix_time as dfdatetime_posix_time
 
@@ -8,7 +8,7 @@ from dfvfs.lib.errors import BackEndError
 from pyarrow._fs import FileType
 from dfvfs.lib import definitions
 from dfvfs.vfs.attribute import Attribute, StatAttribute
-from dfvfshadoop.hdfs_path_specification import HDFSPathSpec
+from dfvfs.path.hdfs_path_specification import HDFSPathSpec
 
 
 class HDFSDirectory(Directory):

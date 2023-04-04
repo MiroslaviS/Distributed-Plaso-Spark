@@ -10,7 +10,7 @@ COPY  docker-app/scripts /
 COPY docker-app/app /app/
 
 # Copy plaso source codes for sparkapp-plaso dependencies
-COPY plaso_project/ /plaso
+COPY plaso_project/ /plaso/
 
 
 ENV  \
@@ -34,7 +34,9 @@ RUN apt install -y python3.7 \
 RUN python3.7 -m pip install "yara-python==4.0.0"
 
 # Install plaso requirements
-RUN python3.7 -m pip install -r /plaso/requirements.txt
+WORKDIR /plaso
+RUN python3.7 -m pip install .
+RUN #python3.7 -m pip install -r /plaso/requirements.txt
 
 # install sparkapp libraries for running API, Spark and HDFS
 RUN python3.7 -m pip install Flask pyarrow python-libarchive \
@@ -42,7 +44,7 @@ RUN python3.7 -m pip install Flask pyarrow python-libarchive \
 
 # Run copy script to copy Hadoop DFVFS new filesystem/file entry/file io/path specification classes
 # into DFVFS package to be able to run with plaso tools (pinfo, psort...)
-WORKDIR /app/plaso_test/
+WORKDIR /app/dfvfshadoop/
 RUN bash copy.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

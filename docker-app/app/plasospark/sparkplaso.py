@@ -2,8 +2,6 @@
 from plasospark.plasowrapper import PlasoWrapper
 from plasospark.sparkjobs import SparkJobFactory
 from managers.distributedmanager import DistributedFileManager
-from formatters.manager import FormatterManager
-
 
 class SparkPlaso:
     def __init__(self, logger):
