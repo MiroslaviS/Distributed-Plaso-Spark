@@ -1,15 +1,16 @@
 import findspark
 from pyspark.sql import SparkSession
-from dfvfshadoop.hdfs_path_specification import HDFSPathSpec
+from dfvfs.path.hdfs_path_specification import HDFSPathSpec
 import json
 from pyspark import SparkConf
 
 class SparkJobFactory:
     def __init__(self, plaso, logger):
         findspark.init()
-        conf = SparkConf()
-        conf.set("spark.executor.memory", "4g")
-        spark = SparkSession.builder.appName("PySpark Plaso").config("spark.executor.memory", "4g").getOrCreate()
+
+        # spark = SparkSession.builder.appName("PySpark Plaso").config("spark.executor.memory", "4g").config("spark.executor.cores", "3").config("spark.python.profile", "true").getOrCreate()
+        spark = SparkSession.builder.appName("PySpark Plaso").config("spark.python.profile", "true").getOrCreate()
+
         self.sc = spark.sparkContext
         self.plaso = plaso
         self.logger = logger
@@ -49,7 +50,6 @@ class SparkJobFactory:
     def create_file_entry_rdd(self, path_specs):
         from helpers.spark_scripts import create_file_entry_rdd
         file_entries_rdd = path_specs.map(create_file_entry_rdd)
-        self.logger("Created RDD with file entries.")
 
         return file_entries_rdd
 

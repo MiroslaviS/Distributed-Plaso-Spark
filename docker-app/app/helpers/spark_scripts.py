@@ -1,11 +1,5 @@
 
 from dfvfs.resolver import resolver as path_resolver
-from dfvfshadoop.hdfs_file_system import HDFSFileSystem
-from dfvfs.resolver.context import Context
-from dfvfshadoop.hdfs_path_specification import HDFSPathSpec
-from pyarrow import fs
-import os
-from plaso.parsers import mediator as parsers_mediator
 from mediators import mediator as spark_mediator
 
 from plaso.engine import extractors
@@ -17,6 +11,7 @@ def create_file_entry_rdd(path_spec):
 
     return file_entry
 
+
 def check_if_metadata(file_rdd):
     file_entry, parser_filter = file_rdd
     extraction_worker = worker.EventExtractionWorker(parser_filter_expression=parser_filter)
@@ -26,7 +21,7 @@ def check_if_metadata(file_rdd):
 
 def create_event_sources(path_spec):
     from plaso.containers import event_sources
-    from dfvfshadoop.definitions import TYPE_INDICATOR_HDFS
+    from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS
 
     event_source = event_sources.FileEntryEventSource(
         file_entry_type=TYPE_INDICATOR_HDFS,
@@ -35,12 +30,14 @@ def create_event_sources(path_spec):
 
     return event_source
 
+
 def create_data_stream_event(path_spec):
     from plaso.containers import events
     data_stream_event = events.EventDataStream()
     data_stream_event.path_spec = path_spec
 
     return data_stream_event
+
 
 def get_signature_parser(signature_rdd):
     """

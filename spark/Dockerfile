@@ -16,9 +16,6 @@ RUN apt install -y python3.7 \
     && python3.7 -m pip install --upgrade pip
 
 RUN python3.7 -m pip install wheel
-
-#RUN python3.7 -m pip install dfvfs
-
 RUN python3.7 -m pip install pyarrow
 
 WORKDIR /plaso
@@ -27,6 +24,6 @@ RUN python3.7 -m pip install .
 
 WORKDIR /dfvfs_fs
 RUN bash copy.sh
-ENTRYPOINT ["/entrypoint_start.sh"]
 
+ENTRYPOINT ["/entrypoint_start.sh"]
 HEALTHCHECK CMD /healthcheck.sh

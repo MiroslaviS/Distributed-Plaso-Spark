@@ -39,21 +39,23 @@ class SparkPlaso:
         self._list_hdfs_files()
 
         self.file_entries_rdd = self.job_factory.create_file_entry_rdd(self.path_specs_rdd)
-        self.event_source_rdd = self.job_factory.create_event_source_rdd(self.path_specs_rdd)
-        self.event_data_stream_rdd = self.job_factory.create_stream_data_event(self.path_specs_rdd)
+
+        if not self.formatter:
+            self.event_source_rdd = self.job_factory.create_event_source_rdd(self.path_specs_rdd)
+            self.event_data_stream_rdd = self.job_factory.create_stream_data_event(self.path_specs_rdd)
 
         self.signature_parsers_rdd = self.job_factory.create_signature_parsers(self.file_entries_rdd)
         self.extraction_files_rdd = self.job_factory.filter_signature_parsers(self.signature_parsers_rdd)
 
-        files_parsers = [(x[0].location, x[1]) for x in self.extraction_files_rdd.collect()]
-
-        self.logger("FILES WITH PARSERS: " + str(files_parsers))
+        # files_parsers = [(x[0].location, x[1]) for x in self.extraction_files_rdd.collect()]
+        #
+        # self.logger("FILES WITH PARSERS: " + str(files_parsers))
 
         mediator_data = self.plaso.create_mediator_holder()
         self.mediator_data_extraction_files_rdd = self.extraction_files_rdd.map(lambda x: (x[0], x[1], mediator_data))
 
-        self.extraction_result_rdd = self.job_factory.create_events_from_rdd(self.mediator_data_extraction_files_rdd)
-
+        extraction_data = self.mediator_data_extraction_files_rdd.repartition(7)
+        self.extraction_result_rdd = self.job_factory.create_events_from_rdd(extraction_data)
         self.events_rdd, self.warnings_rdd, self.recoveries_rdd = self.job_factory.split_events_rdd(self.extraction_result_rdd)
 
         if self.formatter:
@@ -69,12 +71,12 @@ class SparkPlaso:
     def create_response(self):
         if self.formatter:
             formatted_events = self.formatted_events_rdd.collect()
-            formatted_warnings = self.formatted_warnings_rdd.collect()
-            formatted_recoveries = self.formatted_recovery_rdd.collect()
+            # formatted_warnings = self.formatted_warnings_rdd.collect()
+            # formatted_recoveries = self.formatted_recovery_rdd.collect()
 
             response = {'events': formatted_events,
-                        'warnings': formatted_warnings,
-                        'recovery': formatted_recoveries,
+                        # 'warnings': formatted_warnings,
+                        # 'recovery': formatted_recoveries,
                         'status': f'Events formated to {self.formatter.NAME}'}
         else:
             events = self.events_rdd.collect()

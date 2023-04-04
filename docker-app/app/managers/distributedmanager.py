@@ -1,7 +1,6 @@
 
-from dfvfshadoop.hdfs_path_specification import HDFSPathSpec
 from dfvfs.path.factory import Factory
-from dfvfshadoop.definitions import TYPE_INDICATOR_HDFS
+from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS
 from dfvfs.resolver.resolver import Resolver
 from managers.interface import StorageInterface
 

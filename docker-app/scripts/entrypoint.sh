@@ -23,14 +23,3 @@ export PYTHONIOENCODING="utf8"
 export CLASSPATH=`$HADOOP_HOME/bin/hadoop classpath --glob`
 
 python3.7 /app/main.py
-
-#if [ $# -eq 0 ]; then
-#	# interactive
-#	echo "Ahoj kokotko iteractive"
-#	exec su - "${SPARK_USER}"
-#
-#else
-#	# non-interactive
-#	echo "Ahoj kokotko noninteractive @- /app/main.py SPARK_USER=${SPARK_USER}"
-#	exec su "${SPARK_USER}" -c "python3.7 /app/main.py"
-#fi
