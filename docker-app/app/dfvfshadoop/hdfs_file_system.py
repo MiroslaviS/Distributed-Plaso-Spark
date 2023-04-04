@@ -79,6 +79,9 @@ class HDFSFileSystem(FileSystem):
     def create_file(self, file, data=None):
         self.hdfs.create_file(file, data)
 
+    def upload_file(self, file, upload_stream):
+        self.hdfs.upload_file(file, upload_stream)
+
     def delete_file(self, file):
         self.hdfs.delete_file(file)
 

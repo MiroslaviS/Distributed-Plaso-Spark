@@ -62,6 +62,11 @@ class Hdfs:
             hdfs_file.write(data_encoded)
             hdfs_file.flush()
 
+    def upload_file(self, path, upload_stream):
+        with self.fs.open_output_stream(path) as hdfs_file:
+            hdfs_file.upload(upload_stream)
+            hdfs_file.flush()
+
     def open_file(self, path):
         file = self.fs.open_output_stream(path)
 

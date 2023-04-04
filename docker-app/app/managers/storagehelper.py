@@ -1,81 +1,23 @@
-import os
 
+from dfvfs.helpers import source_scanner
+from dfvfs.resolver import context as dfvfs_context
+import os
 from dfvfs.lib import definitions
 from dfvfs.lib import errors
 from dfvfs.path import factory as path_spec_factory
-from dfvfs.helpers import source_scanner
 from dfvfs.analyzer import analyzer as dfvfs_analyzer
-from dfvfs.resolver import context as dfvfs_context
 import libarchive
 
-class StorageManager:
-    def __init__(self, storage_folder, proccessed_folder, logger):
-        self.upload_folder = storage_folder
-        self.preprocessed_folder = proccessed_folder
 
+class ArchiveImageHelper:
+
+    def __init__(self, upload_folder, preprocessed_folder):
         self._source_scanner = source_scanner.SourceScanner()
         self._resolver_context = dfvfs_context.Context()
+        self.upload_folder = upload_folder
+        self.preprocessed_folder = preprocessed_folder
 
-        self._create_internal_folders()
-
-        self.log = logger.warning
-
-    def _create_internal_folders(self):
-        os.makedirs(self.upload_folder, exist_ok=True)
-        os.makedirs(self.preprocessed_folder, exist_ok=True)
-
-    @staticmethod
-    def delete_file(filename):
-        os.remove(filename)
-
-    def scanUploadedFiles(self, upload_paths):
-        while upload_paths:
-            entry = upload_paths.pop(0)
-            if os.path.isdir(entry):
-                dir_files = self._list_dir(entry)
-                upload_paths.extend(dir_files)
-                continue
-
-            delete_file, exported_files = self._scanSource(entry)
-
-
-            upload_paths.extend(exported_files)
-
-            if delete_file:
-                self.delete_file(entry)
-            elif self.upload_folder in entry:
-                # Move file to upload_ready folder
-                # Move only files from upload folder (self.upload_folder/)
-                # Into preprocessed folder
-                self._move_file(entry)
-
-        self.app.logger.info("Preprocessing file ended")
-
-        # Delete log file from image_export
-        os.remove("delete_me_" + str(os.getpid()))
-
-    def _list_dir(self, path):
-        files = os.listdir(path)
-        list_files = []
-
-        for file in files:
-            file_path = os.path.join(path, file)
-            list_files.append(file_path)
-
-        return list_files
-
-    def _remove_postupdate_files(self):
-        files = self._list_dir(self.preprocessed_folder)
-        for file in files:
-            self.delete_file(file)
-
-    def _move_file(self, file_path):
-        filename = file_path.split('/')[-1]
-        destination = os.path.join(self.preprocessed_folder, filename)
-
-        os.rename(file_path, destination)
-
-    def _scanSource(self, path):
+    def scan_source(self, path):
         delete_file = False
         source_path_spec = path_spec_factory.Factory.NewPathSpec(
             definitions.TYPE_INDICATOR_OS, location=path)
@@ -125,12 +67,26 @@ class StorageManager:
 
         return delete_file, extracted_files
 
+    def _scan_media_storage(self, source_path):
+        """
+            Use plaso command line tool for extracting images
+        """
+        import subprocess
+
+        source_path_location = source_path.location
+        export_image_path = self._create_folder_from_archive(source_path_location)
+
+        logfile = "delete_me_" + str(os.getpid())
+
+        export_return_code = subprocess.run(['image_export.py', '-w', export_image_path, source_path_location, "--partitions", "all", "--volumes", "all", "-q", "--logfile", logfile])
+        return export_return_code, export_image_path
+
     def _ScanSourceForArchive(self, path_spec):
         """Determines if a path specification references an archive file.
-  
+
         Args:
           path_spec (dfvfs.PathSpec): path specification of the data stream.
-  
+
         Returns:
           dfvfs.PathSpec: path specification of the archive file or None if not
               an archive file.
@@ -222,27 +178,6 @@ class StorageManager:
 
         return saved_file
 
-    def _create_folder_from_archive(self, archive_path):
-        file_name = os.path.basename(archive_path).replace(".", "_")
-        archive_folder = os.path.dirname(archive_path)
-        archive_folder = archive_folder.replace(self.upload_folder, self.preprocessed_folder)
-
-        folder_name = os.path.join(archive_folder, file_name)
-        os.makedirs(folder_name, exist_ok=True)
-
-        return folder_name
-
-    def _save_compressed_data(self, data, file_path, folder_path):
-        filename = file_path.split('/')[-1].split('.')[0]
-        file_path = os.path.join(folder_path, filename)
-        import chardet
-
-        encoding_result = chardet.detect(data)
-        with open(file_path, 'w') as f:
-            f.write(data.decode(encoding_result['encoding']))
-
-        return file_path
-
     def _scan_for_compression(self, path_spec):
         try:
             type_indicators = dfvfs_analyzer.Analyzer.GetCompressedStreamTypeIndicators(path_spec, self._resolver_context)
@@ -272,16 +207,23 @@ class StorageManager:
 
         return True, path_spec
 
-    def _scan_media_storage(self, source_path):
-        """
-            Use plaso command line tool for extracting images
-        """
-        import subprocess
+    def _create_folder_from_archive(self, archive_path):
+        file_name = os.path.basename(archive_path).replace(".", "_")
+        archive_folder = os.path.dirname(archive_path)
+        archive_folder = archive_folder.replace(self.upload_folder, self.preprocessed_folder)
 
-        source_path_location = source_path.location
-        export_image_path = self._create_folder_from_archive(source_path_location)
+        folder_name = os.path.join(archive_folder, file_name)
+        os.makedirs(folder_name, exist_ok=True)
 
-        logfile = "delete_me_" + str(os.getpid())
+        return folder_name
 
-        export_return_code = subprocess.run(['image_export.py', '-w', export_image_path, source_path_location, "--partitions", "all", "--volumes", "all", "-q", "--logfile", logfile])
-        return export_return_code, export_image_path
+    def _save_compressed_data(self, data, file_path, folder_path):
+        filename = file_path.split('/')[-1].split('.')[0]
+        file_path = os.path.join(folder_path, filename)
+        import chardet
+
+        encoding_result = chardet.detect(data)
+        with open(file_path, 'w') as f:
+            f.write(data.decode(encoding_result['encoding']))
+
+        return file_path

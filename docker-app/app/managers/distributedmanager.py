@@ -3,9 +3,8 @@ from dfvfs.path.factory import Factory
 from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS
 from dfvfs.resolver.resolver import Resolver
 from managers.interface import StorageInterface
-
-from helpers.hdfs import Hdfs
-
+import os
+from pyarrow import input_stream
 
 class DistributedFileManager(StorageInterface):
     def __init__(self):
@@ -38,3 +37,49 @@ class DistributedFileManager(StorageInterface):
 
     def delete_folder(self, path):
         self.hdfs_file_system.delete_folder(path)
+
+    def upload_to_hdfs(self, upload_folder):
+        hdfs_saved_files = []
+
+        for root, dirs, files in os.walk(upload_folder):
+            hdfs_folder = root.replace(upload_folder, "")
+            if hdfs_folder == "":
+                hdfs_folder = "/"
+
+            for directory in dirs:
+                hdfs_dir_path = os.path.join(hdfs_folder, directory)
+                self.hdfs_file_system.create_folder(hdfs_dir_path)
+
+            for file in files:
+                hdfs_file_path = os.path.join(hdfs_folder, file)
+
+                local_file_path = os.path.join(root, file)
+                success, hdfs_path = self.save_file_to_hdfs(hdfs_file_path, local_file_path)
+
+                if success:
+                    hdfs_saved_files.append(hdfs_path)
+
+        return hdfs_saved_files
+
+    def save_file_to_hdfs(self, hdfs_path, file_path):
+        with input_stream(file_path) as f:
+            self.hdfs_file_system.upload_file(hdfs_path, f)
+
+        return True, hdfs_path
+
+    def delete_hdfs_files(self):
+        content = self.hdfs_file_system.ListFileSystem()
+        files = self.hdfs_file_system.GetOnlyFiles(content)
+        deleted_content = list()
+
+        for file in files:
+            self.delete_file(file)
+            deleted_content.append(file)
+
+        folders = [entry.path for entry in content if entry.path not in files]
+
+        for folder in folders:
+            self.delete_folder(folder)
+            deleted_content.append(folder)
+
+        return deleted_content

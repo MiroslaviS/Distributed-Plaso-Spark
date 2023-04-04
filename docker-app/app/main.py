@@ -4,18 +4,19 @@
     and uploading files to HDFS
 """
 from flask import Flask, request, make_response
-from managers.filemanager import LocalStorageManager
-
+from managers.localmanager import LocalStorageManager
+from managers.distributedmanager import DistributedFileManager
 import findspark
 findspark.init()    # This is necessary to be before importing sparkContext !
+
+from plasospark.sparkplaso import SparkPlaso
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = "upload_no_process"
 app.config['PREPROCESSED_FOLDER'] = "upload_processed"
 
 local_storage = LocalStorageManager(app)
-
-from plasospark.sparkplaso import SparkPlaso
+hdfs_storage = DistributedFileManager()
 
 @app.route('/extract')
 def spark():
@@ -32,9 +33,9 @@ def upload_files():
         return make_response("Multiple files not provided, missing files[] key", 400)
 
     files = request.files.getlist('files[]')
-    saved_files = local_storage.save_files(files)
+    local_storage.save_files(files)
 
-    local_storage.preprocess_files()
+    saved_files = local_storage.preprocess_files()
     return make_response({"status": "OK, preprocessing before HDFS started", "saved_files": saved_files}, 200)
 
 
@@ -52,14 +53,15 @@ def upload_file():
 
 @app.route("/upload/hdfs")
 def upload_to_hdfs():
-    result = local_storage.upload_to_hdfs()
+    result = hdfs_storage.upload_to_hdfs(app.config['PREPROCESSED_FOLDER'])
+    local_storage.clear_hdfs_upload_folder()
 
     return make_response({"status": "OK", "result": result}, 200)
 
 
 @app.route("/delete/hdfs")
 def delete_hdfs():
-    result = local_storage.delete_hdfs_files()
+    result = hdfs_storage.delete_hdfs_files()
 
     return make_response({"status": "OK", "result": result}, 200)
 
