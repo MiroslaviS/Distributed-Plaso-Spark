@@ -2,16 +2,21 @@
 from plasospark.plasowrapper import PlasoWrapper
 from plasospark.sparkjobs import SparkJobFactory
 from managers.distributedmanager import DistributedFileManager
+from formatters.manager import FormatterManager
+
 
 class SparkPlaso:
-    def __init__(self, logger):
-        self.plaso = PlasoWrapper()
+    def __init__(self, logger, formatter=None, output_file='/output.plaso', plaso_args=None):
+        self.plaso = PlasoWrapper(storage_file=output_file, plaso_arguments=plaso_args)
         self.job_factory = SparkJobFactory(self.plaso, logger)
         self.storage_manager = DistributedFileManager()
 
         self.logger = logger
-        # self.formatter = FormatterManager.get_formatter("json")
-        self.formatter = None
+
+        if formatter:
+            self.formatter = FormatterManager.get_formatter(formatter)
+        else:
+            self.formatter = None
 
         self.file_entries_rdd = None
         self.path_specs_rdd = None

@@ -20,11 +20,21 @@ hdfs_storage = DistributedFileManager()
 
 @app.route('/extract')
 def spark():
-    plasoSpark = SparkPlaso(app.logger.warning)
+    args = request.args
+
+    output_file = request.args.get('output_file')
+    formatter = request.args.get('formatter')
+    plaso_args = eval(request.args.get('plaso_args'))
+
+
+    plasoSpark = SparkPlaso(app.logger.warning,
+                            formatter=formatter,
+                            output_file=output_file,
+                            plaso_args=plaso_args)
 
     response = plasoSpark.extraction()
 
-    return make_response(response, 200)
+    return make_response({"args": response}, 200)
 
 
 @app.route("/upload/files", methods=['POST'])

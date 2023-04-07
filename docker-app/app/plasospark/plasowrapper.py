@@ -8,12 +8,17 @@ from plaso.engine import engine, timeliner
 import collections
 from plaso.containers import counts
 
+
 class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
-    def __init__(self, storage_file='/output.plaso'):
+    def __init__(self, storage_file='/output.plaso', plaso_arguments=None):
         super(PlasoWrapper, self).__init__()
+
+        if plaso_arguments is None:
+            plaso_arguments = ['--debug', '--single-process']
 
         self._artifact_definitions_path = '/app/plaso/share_artifacts/artifacts/'
         self.extraction_engine = SingleProcessEngine()
+
         self.configuration = None
         self.parser_mediator = None
         self.parsers = None
@@ -22,10 +27,10 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
         self.session = None
 
         self.storage_file_path = storage_file
-        self.create_extraction_configs()
+        self.create_extraction_configs(plaso_arguments)
 
-    def create_extraction_configs(self):
-        self.ParseArguments(['--debug', '--single-process'])
+    def create_extraction_configs(self, plaso_arguments):
+        self.ParseArguments(plaso_arguments)
         self._expanded_parser_filter_expression = (self._GetExpandedParserFilterExpression(
                                                                         self.extraction_engine.knowledge_base))
         self.configuration = self._CreateExtractionProcessingConfiguration()
