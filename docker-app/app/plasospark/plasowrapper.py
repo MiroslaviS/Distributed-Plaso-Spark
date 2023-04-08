@@ -10,11 +10,14 @@ from plaso.containers import counts
 
 
 class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
-    def __init__(self, storage_file='/output.plaso', plaso_arguments=None):
+    def __init__(self, storage_file=None, plaso_arguments=None):
         super(PlasoWrapper, self).__init__()
 
         if plaso_arguments is None:
             plaso_arguments = ['--debug', '--single-process']
+
+        if storage_file is None:
+            storage_file = '/output.plaso'
 
         self._artifact_definitions_path = '/app/plaso/share_artifacts/artifacts/'
         self.extraction_engine = SingleProcessEngine()

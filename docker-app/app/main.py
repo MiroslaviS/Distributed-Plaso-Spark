@@ -24,7 +24,9 @@ def spark():
 
     output_file = request.args.get('output_file')
     formatter = request.args.get('formatter')
-    plaso_args = eval(request.args.get('plaso_args'))
+    plaso_args = request.args.get('plaso_args')
+    if plaso_args:
+        plaso_args = eval(request.args.get('plaso_args'))
 
 
     plasoSpark = SparkPlaso(app.logger.warning,

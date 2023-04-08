@@ -6,7 +6,7 @@ from formatters.manager import FormatterManager
 
 
 class SparkPlaso:
-    def __init__(self, logger, formatter=None, output_file='/output.plaso', plaso_args=None):
+    def __init__(self, logger, formatter=None, output_file=None, plaso_args=None):
         self.plaso = PlasoWrapper(storage_file=output_file, plaso_arguments=plaso_args)
         self.job_factory = SparkJobFactory(self.plaso, logger)
         self.storage_manager = DistributedFileManager()
@@ -50,56 +50,52 @@ class SparkPlaso:
         self.signature_parsers_rdd = self.job_factory.create_signature_parsers(self.file_entries_rdd)
         self.extraction_files_rdd = self.job_factory.filter_signature_parsers(self.signature_parsers_rdd)
 
-        # files_parsers = [(x[0].location, x[1]) for x in self.extraction_files_rdd.collect()]
-        #
-        # self.logger("FILES WITH PARSERS: " + str(files_parsers))
-
         mediator_data = self.plaso.create_mediator_holder()
-        self.mediator_data_extraction_files_rdd = self.extraction_files_rdd.map(lambda x: (x[0], x[1], mediator_data))
+        self.job_factory.create_broadcast_mediator(mediator_data)
 
-        extraction_data = self.mediator_data_extraction_files_rdd.repartition(7)
+        # extraction_data = self.mediator_data_extraction_files_rdd.repartition(7)
+
+        self.logger("Number of patitions: " + str(self.extraction_files_rdd.getNumPartitions()))
+
+        extraction_data = self.extraction_files_rdd.repartition(4)
         self.extraction_result_rdd = self.job_factory.create_events_from_rdd(extraction_data)
-        self.events_rdd, self.warnings_rdd, self.recoveries_rdd = self.job_factory.split_events_rdd(self.extraction_result_rdd)
 
         if self.formatter:
-            self.formatted_events_rdd = self.job_factory.create_formatted_rdd(self.events_rdd, self.formatter)
-            self.formatted_warnings_rdd = self.job_factory.create_formatted_rdd(self.warnings_rdd, self.formatter)
-            self.formatted_recovery_rdd = self.job_factory.create_formatted_rdd(self.recoveries_rdd, self.formatter)
-        else:
-            # Use plaso formating
-            self.create_plaso_output()
+            self.formatted_events_rdd = self.job_factory.create_formatted_rdd(self.extraction_result_rdd, self.formatter)
 
         return self.create_response()
 
     def create_response(self):
         if self.formatter:
             formatted_events = self.formatted_events_rdd.collect()
-            # formatted_warnings = self.formatted_warnings_rdd.collect()
-            # formatted_recoveries = self.formatted_recovery_rdd.collect()
 
             response = {'events': formatted_events,
-                        # 'warnings': formatted_warnings,
-                        # 'recovery': formatted_recoveries,
                         'status': f'Events formated to {self.formatter.NAME}'}
         else:
-            events = self.events_rdd.collect()
-            warnings = self.warnings_rdd.collect()
-            recovery = self.recoveries_rdd.collect()
+            events = self.extraction_result_rdd.collect()
 
-            response = {'number of events': len(events),
-                        'number of warnings': len(warnings),
-                        'number of recovery': len(recovery),
+            self.create_plaso_output(events)
+            response = {'number of events': len(self.events_data),
+                        'number of warnings': len(self.warning_data),
+                        'number of recovery': len(self.recovery_data),
                         'status': f'Events saved to plaso format into {self.plaso.storage_file_path}'}
 
         return response
 
-    def create_plaso_output(self):
+    def create_plaso_output(self, events):
+        from plaso.containers import warnings
+
+        self.events_data = [event for event in events if not isinstance(event, warnings.ExtractionWarning) and not isinstance(event, warnings.RecoveryWarning)]
+        self.warning_data = [event for event in events if isinstance(event, warnings.ExtractionWarning) ]
+        self.recovery_data = [event for event in events if isinstance(event, warnings.RecoveryWarning) ]
+
         self.process_plaso_event_sources()
         self.process_event_data()
         self.process_warning_data()
         self.process_recovery_data()
 
         self.create_end_plaso_extraction()
+
 
     def create_start_extraction(self):
         self.plaso.create_plaso_start_containers()
@@ -112,20 +108,17 @@ class SparkPlaso:
         self.plaso.add_event_source(event_sources)
 
     def process_event_data(self):
-        events_data = self.events_rdd.collect()
         data_streams = self.event_data_stream_rdd.collect()
 
-        self.plaso.add_event(events_data, data_streams)
+        self.plaso.add_event(self.events_data, data_streams)
 
         return self.plaso.process_event_data()
 
     def process_warning_data(self):
-        warning_data = self.warnings_rdd.collect()
-        self.plaso.create_plaso_warning_containers(warning_data)
+        self.plaso.create_plaso_warning_containers(self.warning_data)
 
     def process_recovery_data(self):
-        recovery_data = self.recoveries_rdd.collect()
-        self.plaso.create_plaso_recovery_containers(recovery_data)
+        self.plaso.create_plaso_recovery_containers(self.recovery_data)
 
     def _list_hdfs_files(self):
         files = self.storage_manager.get_files()

@@ -8,14 +8,19 @@ class SparkJobFactory:
     def __init__(self, plaso, logger):
         findspark.init()
 
-        # spark = SparkSession.builder.appName("PySpark Plaso").config("spark.executor.memory", "4g").config("spark.executor.cores", "3").config("spark.python.profile", "true").getOrCreate()
-        spark = SparkSession.builder.appName("PySpark Plaso").config("spark.python.profile", "true").getOrCreate()
+        spark = SparkSession.builder.appName("PySpark Plaso").config("spark.executor.memory", "1g").config("spark.executor.cores", "3").config("spark.python.profile", "true").getOrCreate()
+        # spark = SparkSession.builder.appName("PySpark Plaso").config("spark.python.profile", "true").getOrCreate()
 
         self.sc = spark.sparkContext
         self.plaso = plaso
         self.logger = logger
-
         self.upload_spark_dep()
+
+        self.broadcast_mediator = None
+        self.broadcast_config_parser = None
+
+    def create_broadcast_mediator(self, data):
+        self.broadcast_mediator = self.sc.broadcast(data)
 
     def test(self, configuration):
         foo = self.sc.parallelize([configuration])
@@ -63,36 +68,33 @@ class SparkJobFactory:
 
         config_parser = self.plaso.get_filter_expression()
 
+        broadcast_config_parser = self.sc.broadcast(config_parser)
         self.logger("Available parser filter expression: " + config_parser)
 
         # Map configuration to file entry in RDD
-        signature_rdd = file_entries_rdd.map(lambda x: (x, config_parser))
-        self.logger("Calculated signatures for file entries")
+        # signature_rdd = file_entries_rdd.map(lambda x: (x, config_parser))
+        # self.logger("Calculated signatures for file entries")
 
-        rdd_signature_parsers = signature_rdd.map(get_signature_parser)
+        rdd_signature_parsers = file_entries_rdd.map(lambda file_entry: get_signature_parser(file_entry, broadcast_config_parser))
+        self.broadcast_config_parser = broadcast_config_parser
+
         self.logger("Calculated parsers from from file entries signatures")
-
         return rdd_signature_parsers
-
-    def split_events_rdd(self, extraction_result_rdd):
-        events_rdd = extraction_result_rdd.flatMap(lambda x: x[0])
-        warnings_rdd = extraction_result_rdd.flatMap(lambda x: x[1])
-        recoveries_rdd = extraction_result_rdd.flatMap(lambda x: x[2])
-
-        return events_rdd, warnings_rdd, recoveries_rdd
 
     def create_events_from_rdd(self, all_files_rdd):
         from helpers.spark_scripts import parse
 
         self.logger("Starting parsing on RDDs")
-        events_rdd = all_files_rdd.map(parse)
+        mediator = self.broadcast_mediator
+        events_rdd = all_files_rdd.flatMap(lambda file: parse(file, mediator))
 
         return events_rdd
 
     def create_formatted_rdd(self, events_rdd, formatter):
-        formatted_rdd = events_rdd.map(formatter.format)
+        non_empty_events_rdd = events_rdd.filter(lambda events: len(events) != 0)
+        formatted_events = non_empty_events_rdd.map(formatter.format)
 
-        return formatted_rdd
+        return formatted_events
 
     def filter_signature_parsers(self, signature_parsers_rdd):
         """
@@ -101,12 +103,12 @@ class SparkJobFactory:
         :return: [(path_spec, parser)]
         """
         non_sig = self.plaso.get_nonsig_parsers()
-
+        broadcast_non_sig = self.sc.broadcast(non_sig)
         # Get files without signed signature for parsers
         non_sig_files = signature_parsers_rdd.filter(lambda x: len(x[1]) == 0)
 
         # Create tuple RDD with file and assigned non sig parsers
-        non_sig_ext = non_sig_files.map(lambda x: (x[0], non_sig))
+        non_sig_ext = non_sig_files.map(lambda x: (x[0], broadcast_non_sig.value))
 
         # Get files with signed signature for parsers
         sig_files = signature_parsers_rdd.filter(lambda x: len(x[1]) != 0)

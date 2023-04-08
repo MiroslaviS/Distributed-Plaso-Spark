@@ -39,13 +39,14 @@ def create_data_stream_event(path_spec):
     return data_stream_event
 
 
-def get_signature_parser(signature_rdd):
+def get_signature_parser(signature_rdd, broadcast_config_parser):
     """
 
     :param signature_rdd:
     :return: file_entry, parser_names
     """
-    file_entry, parser_filter_expression = signature_rdd
+    file_entry = signature_rdd
+    parser_filter_expression = broadcast_config_parser.value
 
     # Get File object from file_entry
     file_object = file_entry.GetFileObject()
@@ -81,7 +82,7 @@ def expand_file_parsers(file_signature):
     return file_parsers
 
 
-def parse(parsing_rdd):
+def parse(parsing_rdd, mediator_data_broadcast):
     """
 
     :param parsing_rdd:
@@ -89,7 +90,7 @@ def parse(parsing_rdd):
     """
     from plaso.parsers import manager as parsers_manager
 
-    path_spec, parser_name, mediator_data = parsing_rdd
+    path_spec, parser_name = parsing_rdd
     file_entry = path_resolver.Resolver.OpenFileEntry(path_spec)
 
     parsers = parsers_manager.ParsersManager.GetParserObjects()
@@ -97,6 +98,7 @@ def parse(parsing_rdd):
 
     file_object = file_entry.GetFileObject()
 
+    mediator_data = mediator_data_broadcast.value
     mediator = spark_mediator.ParserMediator(mediator_data)
     mediator.SetFileEntry(file_entry)
 
@@ -114,5 +116,12 @@ def parse(parsing_rdd):
     finally:
         file_object._Close()
 
-    return mediator.event_queue, mediator.warning_queue, mediator.recovery_queue
+    events = []
+    events.extend(mediator.event_queue)
+    events.extend(mediator.warning_queue)
+    events.extend(mediator.recovery_queue)
+
+    return events
+
+    # return mediator.event_queue, mediator.warning_queue, mediator.recovery_queue
     # return "[" + parser.NAME + "]" + path_spec.location, len(mediator.event_queue), len(mediator.warning_queue), len(mediator.recovery_queue)
