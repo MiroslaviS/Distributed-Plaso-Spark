@@ -67,11 +67,13 @@ class SparkPlaso:
 
     def create_response(self):
         if self.formatter:
+            self.logger("Create response with formatter !")
             formatted_events = self.formatted_events_rdd.collect()
 
             response = {'events': formatted_events,
                         'status': f'Events formated to {self.formatter.NAME}'}
         else:
+            self.logger("Create response with plaso tools!")
             events = self.extraction_result_rdd.collect()
 
             self.create_plaso_output(events)
@@ -85,7 +87,7 @@ class SparkPlaso:
     def create_plaso_output(self, events):
         from plaso.containers import warnings
 
-        self.events_data = [event for event in events if not isinstance(event, warnings.ExtractionWarning) and not isinstance(event, warnings.RecoveryWarning)]
+        self.events_data = [event for event in events if (not isinstance(event, warnings.ExtractionWarning) and not isinstance(event, warnings.RecoveryWarning))]
         self.warning_data = [event for event in events if isinstance(event, warnings.ExtractionWarning) ]
         self.recovery_data = [event for event in events if isinstance(event, warnings.RecoveryWarning) ]
 
@@ -95,7 +97,6 @@ class SparkPlaso:
         self.process_recovery_data()
 
         self.create_end_plaso_extraction()
-
 
     def create_start_extraction(self):
         self.plaso.create_plaso_start_containers()

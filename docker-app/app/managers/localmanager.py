@@ -15,7 +15,7 @@ class LocalStorageManager(StorageInterface):
         self.upload_folder = app.config['UPLOAD_FOLDER']
         self.preprocessed_folder = app.config['PREPROCESSED_FOLDER']
 
-        self.archive_image_helper = ArchiveImageHelper(self.upload_folder, self.preprocessed_folder)
+        self.archive_image_helper = ArchiveImageHelper(self.upload_folder, self.preprocessed_folder, app.logger.warning)
         self._create_internal_folders()
 
     def create_folder(self, path):
@@ -48,7 +48,6 @@ class LocalStorageManager(StorageInterface):
                 continue
 
             delete_file, exported_files = self.archive_image_helper.scan_source(entry)
-
             self.uploaded_files.extend(exported_files)
 
             if delete_file:
@@ -69,7 +68,11 @@ class LocalStorageManager(StorageInterface):
         os.makedirs(self.preprocessed_folder, exist_ok=True)
 
     def delete_file(self, filename):
-        os.remove(filename)
+        if os.path.isdir(filename):
+            import shutil
+            shutil.rmtree(filename, ignore_errors=True)
+        else:
+            os.remove(filename)
 
     def list_folder(self, path):
         files = os.listdir(path)
@@ -87,8 +90,12 @@ class LocalStorageManager(StorageInterface):
             self.delete_file(file)
 
     def move_file(self, file_path):
-        filename = file_path.split('/')[-1]
-        destination = os.path.join(self.preprocessed_folder, filename)
+        destination = file_path.replace(self.upload_folder, self.preprocessed_folder)
+        # filename = file_path.split('/')[-1]
+        # destination = os.path.join(self.preprocessed_folder, filename)
+        from pathlib import Path
+        path = Path(destination)
+        path.parent.mkdir(parents=True, exist_ok=True)
 
         os.rename(file_path, destination)
 

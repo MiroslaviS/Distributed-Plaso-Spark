@@ -11,11 +11,12 @@ import libarchive
 
 class ArchiveImageHelper:
 
-    def __init__(self, upload_folder, preprocessed_folder):
+    def __init__(self, upload_folder, preprocessed_folder, logger):
         self._source_scanner = source_scanner.SourceScanner()
         self._resolver_context = dfvfs_context.Context()
         self.upload_folder = upload_folder
         self.preprocessed_folder = preprocessed_folder
+        self.logger = logger
 
     def scan_source(self, path):
         delete_file = False
@@ -74,11 +75,11 @@ class ArchiveImageHelper:
         import subprocess
 
         source_path_location = source_path.location
-        export_image_path = self._create_folder_from_archive(source_path_location)
+        export_image_path = self._create_folder_from_archive(source_path_location, move=False)
 
         logfile = "delete_me_" + str(os.getpid())
 
-        export_return_code = subprocess.run(['image_export.py', '-w', export_image_path, source_path_location, "--partitions", "all", "--volumes", "all", "-q", "--logfile", logfile])
+        export_return_code = subprocess.run(['python3.7', '-m', 'tools.image_export', '-w', export_image_path, source_path_location, "--partitions", "all", "--volumes", "all", "-q", "--logfile", logfile], cwd='/plaso')
         return export_return_code, export_image_path
 
     def _ScanSourceForArchive(self, path_spec):
@@ -163,6 +164,7 @@ class ArchiveImageHelper:
     def _process_gz_compression(self, file_path):
         import gzip
         with gzip.open(file_path) as f:
+            self.logger("TOTO JE FILE PATH " + file_path)
             folder = self._create_folder_from_archive(file_path)
             data = f.read()
             saved_file = self._save_compressed_data(data, file_path, folder)
@@ -207,12 +209,15 @@ class ArchiveImageHelper:
 
         return True, path_spec
 
-    def _create_folder_from_archive(self, archive_path):
+    def _create_folder_from_archive(self, archive_path, move=True):
         file_name = os.path.basename(archive_path).replace(".", "_")
         archive_folder = os.path.dirname(archive_path)
-        archive_folder = archive_folder.replace(self.upload_folder, self.preprocessed_folder)
+
+        if move:
+            archive_folder = archive_folder.replace(self.upload_folder, self.preprocessed_folder)
 
         folder_name = os.path.join(archive_folder, file_name)
+
         os.makedirs(folder_name, exist_ok=True)
 
         return folder_name
@@ -223,6 +228,8 @@ class ArchiveImageHelper:
         import chardet
 
         encoding_result = chardet.detect(data)
+        self.logger(encoding_result)
+
         with open(file_path, 'w') as f:
             f.write(data.decode(encoding_result['encoding']))
 

@@ -8,7 +8,7 @@ class SparkJobFactory:
     def __init__(self, plaso, logger):
         findspark.init()
 
-        spark = SparkSession.builder.appName("PySpark Plaso").config("spark.executor.memory", "1g").config("spark.executor.cores", "3").config("spark.python.profile", "true").getOrCreate()
+        spark = SparkSession.builder.appName("PySpark Plaso Testing").config("spark.executor.memory", "1g").config("spark.executor.cores", "2").getOrCreate()
         # spark = SparkSession.builder.appName("PySpark Plaso").config("spark.python.profile", "true").getOrCreate()
 
         self.sc = spark.sparkContext
@@ -91,8 +91,9 @@ class SparkJobFactory:
         return events_rdd
 
     def create_formatted_rdd(self, events_rdd, formatter):
-        non_empty_events_rdd = events_rdd.filter(lambda events: len(events) != 0)
-        formatted_events = non_empty_events_rdd.map(formatter.format)
+
+        # non_empty_events_rdd = events_rdd.filter(lambda events: len(events) != 0)
+        formatted_events = events_rdd.map(formatter.format)
 
         return formatted_events
 
