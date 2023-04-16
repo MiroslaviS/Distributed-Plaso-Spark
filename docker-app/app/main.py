@@ -20,21 +20,21 @@ hdfs_storage = DistributedFileManager()
 
 @app.route('/extract')
 def spark():
-    args = request.args
-
     output_file = request.args.get('output_file')
     formatter = request.args.get('formatter')
     plaso_args = request.args.get('plaso_args')
+    partitions = request.args.get('partitions')
+
     if plaso_args:
         plaso_args = eval(request.args.get('plaso_args'))
 
-
-    plasoSpark = SparkPlaso(app.logger.warning,
+    plaso_spark = SparkPlaso(app.logger.warning,
                             formatter=formatter,
                             output_file=output_file,
-                            plaso_args=plaso_args)
+                            plaso_args=plaso_args,
+                            partitions=partitions)
 
-    response = plasoSpark.extraction()
+    response = plaso_spark.extraction()
 
     return make_response({"args": response}, 200)
 
@@ -48,6 +48,7 @@ def upload_files():
     local_storage.save_files(files)
 
     saved_files = local_storage.preprocess_files()
+    local_storage.clear_local_upload_folder()
     return make_response({"status": "OK, preprocessing before HDFS started", "saved_files": saved_files}, 200)
 
 
@@ -60,13 +61,14 @@ def upload_file():
     filename = local_storage.save_file(file)
 
     local_storage.preprocess_files()
+    local_storage.delete_folder(local_storage.upload_folder)
     return make_response({"status": "OK, preprocessing before HDFS started", "saved_file": filename}, 200)
 
 
 @app.route("/upload/hdfs")
 def upload_to_hdfs():
     result = hdfs_storage.upload_to_hdfs(app.config['PREPROCESSED_FOLDER'])
-    local_storage.clear_hdfs_upload_folder()
+    local_storage.delete_folder(local_storage.preprocessed_folder)
 
     return make_response({"status": "OK", "result": result}, 200)
 

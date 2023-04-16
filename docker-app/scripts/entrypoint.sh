@@ -22,4 +22,16 @@ make_hdfs_dirs
 export PYTHONIOENCODING="utf8"
 export CLASSPATH=`$HADOOP_HOME/bin/hadoop classpath --glob`
 
+cd /app
+
+zip -r helpers.zip helpers/
+zip -r mediators.zip mediators/
+zip -r formatters.zip formatters/
+
+mkdir -p /app/spark_dep
+
+mv helpers.zip /app/spark_dep/
+mv mediators.zip /app/spark_dep/
+mv formatters.zip /app/spark_dep/
+
 python3.7 /app/main.py

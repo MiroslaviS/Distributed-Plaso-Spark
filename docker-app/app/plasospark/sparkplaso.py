@@ -6,11 +6,11 @@ from formatters.manager import FormatterManager
 
 
 class SparkPlaso:
-    def __init__(self, logger, formatter=None, output_file=None, plaso_args=None):
+    def __init__(self, logger, formatter=None, output_file=None, plaso_args=None, partitions=None):
         self.plaso = PlasoWrapper(storage_file=output_file, plaso_arguments=plaso_args)
         self.job_factory = SparkJobFactory(self.plaso, logger)
         self.storage_manager = DistributedFileManager()
-
+        self.partitions = partitions
         self.logger = logger
 
         if formatter:
@@ -53,12 +53,14 @@ class SparkPlaso:
         mediator_data = self.plaso.create_mediator_holder()
         self.job_factory.create_broadcast_mediator(mediator_data)
 
-        # extraction_data = self.mediator_data_extraction_files_rdd.repartition(7)
-
         self.logger("Number of patitions: " + str(self.extraction_files_rdd.getNumPartitions()))
 
-        extraction_data = self.extraction_files_rdd.repartition(4)
-        self.extraction_result_rdd = self.job_factory.create_events_from_rdd(extraction_data)
+        if self.partitions:
+            extraction_data = self.extraction_files_rdd.repartition(int(self.partitions))
+            self.extraction_result_rdd = self.job_factory.create_events_from_rdd(extraction_data)
+            self.logger("Number of partition after repartition: " + str(extraction_data.getNumPartitions()))
+        else:
+            self.extraction_result_rdd = self.job_factory.create_events_from_rdd(self.extraction_files_rdd)
 
         if self.formatter:
             self.formatted_events_rdd = self.job_factory.create_formatted_rdd(self.extraction_result_rdd, self.formatter)

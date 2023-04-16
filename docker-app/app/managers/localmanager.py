@@ -22,6 +22,9 @@ class LocalStorageManager(StorageInterface):
         pass
 
     def delete_folder(self, path):
+        files = self.list_folder(path)
+        for file in files:
+            self.delete_file(file)
         pass
 
     def save_files(self, files):
@@ -83,6 +86,12 @@ class LocalStorageManager(StorageInterface):
             list_files.append(file_path)
 
         return list_files
+
+    def clear_local_upload_folder(self):
+        files = self.list_folder(self.upload_folder)
+
+        for file in files:
+            self.delete_file(file)
 
     def clear_hdfs_upload_folder(self):
         files = self.list_folder(self.preprocessed_folder)

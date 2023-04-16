@@ -2,7 +2,6 @@ version: '3'
 services:
 
   # HDFS services from rychly-edu
-  # HDFS namenode
   namenode:
     image: registry.gitlab.com/rychly-edu/docker/docker-hdfs:3.2.1
     environment:
@@ -68,7 +67,7 @@ services:
 
   sparkmaster:
 #    image: registry.gitlab.com/rychly-edu/docker/docker-spark:2.4.4-hadoop3.2
-    image: spark
+    image: ghcr.io/miroslavis/spark
     environment:
       - ROLE=master
       - MASTER_PORT=7077
@@ -78,21 +77,46 @@ services:
       - "54041:4040"
 
   sparkworker:
-    # hadoop 3.2.0 bug: missing lib/native/lihdfs.so, so cannot use pyarrow hdfs -> use hadoop 3.1.*
-#    image: registry.gitlab.com/rychly-edu/docker/docker-spark:2.4.4-hadoop3.2
-    image: spark
+    image: ghcr.io/miroslavis/spark
     # to restart lost workers (i.e., workers exited with after a task or on a failure when asked to kill an executor)
     restart: always
     environment:
       - ROLE=worker
       - MASTER_URL=spark://sparkmaster:7077
       - WEBUI_PORT=4040
-#    ports:
-#      - "4040:4041"
+      - SPARK_WORKER_CORES=4
+      - SPARK_WORKER_MEMORY=3g
+    ports:
+      - "54040:4040"
+
+  sparkworker2:
+    image: ghcr.io/miroslavis/spark
+    # to restart lost workers (i.e., workers exited with after a task or on a failure when asked to kill an executor)
+    restart: always
+    environment:
+      - ROLE=worker
+      - MASTER_URL=spark://sparkmaster:7077
+      - WEBUI_PORT=4040
+      - SPARK_WORKER_CORES=4
+      - SPARK_WORKER_MEMORY=3g
+    ports:
+      - "54042:4040"
+
+  sparkworker3:
+    image: ghcr.io/miroslavis/spark
+    # to restart lost workers (i.e., workers exited with after a task or on a failure when asked to kill an executor)
+    restart: always
+    environment:
+      - ROLE=worker
+      - MASTER_URL=spark://sparkmaster:7077
+      - WEBUI_PORT=4040
+      - SPARK_WORKER_CORES=4
+      - SPARK_WORKER_MEMORY=3g
+    ports:
+      - "54043:4040"
 
   sparkapp:
-    image: sparkapp
-#    image: application
+    image: ghcr.io/miroslavis/sparkapp:1.2
     environment:
       - MASTER_URL=spark://sparkmaster:7077
       - SPARK_JARS=/app/lib
@@ -102,13 +126,8 @@ services:
     ports:
       - "4040:4040"
       - "5000:5000"
-#    entrypoint: tail -F /dev/null
-
-    volumes:
-      - ..\docker-app\app:/app
     working_dir: /app
 #    entrypoint: tail -F /dev/null
+#
 #    volumes:
-#      - type: bind
-#        source: ..\docker-app\app
-#        target: /app
+#      - ..\docker-app\app:/app

@@ -13,11 +13,11 @@ class HDFSFile(FileIO):
         self._size = 0
 
     def _Close(self):
+        self._is_open = False
         self._file_object.close()
         self._file_object = None
 
     def _Open(self, mode='rb'):
-
         if self._path_spec is None:
             raise ValueError("Missing path specification.")
 

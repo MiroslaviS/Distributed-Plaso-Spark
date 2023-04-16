@@ -20,7 +20,7 @@ SPARK_APP=/app/main.py
 
 RUN true && chmod 755 /*.sh \
     && apt update \
-    && apt install -y software-properties-common \
+    && apt install -y software-properties-common zip \
     && add-apt-repository --yes ppa:deadsnakes/ppa \
     && add-apt-repository --yes universe \
     && add-apt-repository --yes ppa:gift/stable \

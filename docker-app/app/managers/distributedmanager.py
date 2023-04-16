@@ -79,7 +79,12 @@ class DistributedFileManager(StorageInterface):
         folders = [entry.path for entry in content if entry.path not in files]
 
         for folder in folders:
-            self.delete_folder(folder)
-            deleted_content.append(folder)
+            try:
+                self.delete_folder(folder)
+                deleted_content.append(folder)
+            except FileNotFoundError:
+                # Expect FileNotFoundError bcs of deleting all folders
+                # need to have list of all deleted files/folders
+                pass
 
         return deleted_content

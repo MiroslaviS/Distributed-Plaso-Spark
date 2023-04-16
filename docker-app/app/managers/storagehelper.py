@@ -12,6 +12,7 @@ import libarchive
 class ArchiveImageHelper:
 
     def __init__(self, upload_folder, preprocessed_folder, logger):
+        self.extracted_counter = 0
         self._source_scanner = source_scanner.SourceScanner()
         self._resolver_context = dfvfs_context.Context()
         self.upload_folder = upload_folder
@@ -164,7 +165,6 @@ class ArchiveImageHelper:
     def _process_gz_compression(self, file_path):
         import gzip
         with gzip.open(file_path) as f:
-            self.logger("TOTO JE FILE PATH " + file_path)
             folder = self._create_folder_from_archive(file_path)
             data = f.read()
             saved_file = self._save_compressed_data(data, file_path, folder)
@@ -210,7 +210,12 @@ class ArchiveImageHelper:
         return True, path_spec
 
     def _create_folder_from_archive(self, archive_path, move=True):
-        file_name = os.path.basename(archive_path).replace(".", "_")
+        if "." in archive_path:
+            file_name = os.path.basename(archive_path).replace(".", "_")
+        else:
+            file_name = os.path.basename(archive_path) + "_extracted" + str(self.extracted_counter)
+            self.extracted_counter += 1
+
         archive_folder = os.path.dirname(archive_path)
 
         if move:
@@ -230,7 +235,17 @@ class ArchiveImageHelper:
         encoding_result = chardet.detect(data)
         self.logger(encoding_result)
 
-        with open(file_path, 'w') as f:
-            f.write(data.decode(encoding_result['encoding']))
+        if not encoding_result['encoding']:
+            encoding = "utf-8"
+        else:
+            encoding = encoding_result['encoding']
+
+        try:
+            decoded_data = data.decode(encoding)
+            with open(file_path, 'w') as f:
+                f.write(decoded_data)
+
+        except:
+            self.logger("Unable to decode file: " + file_path)
 
         return file_path

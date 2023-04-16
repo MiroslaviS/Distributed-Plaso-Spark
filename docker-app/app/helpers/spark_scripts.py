@@ -96,30 +96,40 @@ def parse(parsing_rdd, mediator_data_broadcast):
     parsers = parsers_manager.ParsersManager.GetParserObjects()
     parser = parsers.get(parser_name)
 
-    file_object = file_entry.GetFileObject()
-
+    file_object = None
     mediator_data = mediator_data_broadcast.value
     mediator = spark_mediator.ParserMediator(mediator_data)
     mediator.SetFileEntry(file_entry)
 
     from plaso.parsers import interface as parsers_interface
 
+    # if isinstance(parser, parsers_interface.FileEntryParser):
+    #     parser.Parse(mediator)
+    # elif isinstance(parser, parsers_interface.FileObjectParser):
+    #     file_object = file_entry.GetFileObject()
+    #
+    #     parser.Parse(mediator, file_object)
+
     try:
         if isinstance(parser, parsers_interface.FileEntryParser):
             parser.Parse(mediator)
         elif isinstance(parser, parsers_interface.FileObjectParser):
+            file_object = file_entry.GetFileObject()
+
             parser.Parse(mediator, file_object)
     except:
         # Do nothing on exception. Exceptions are raised when nonsig parser tries to parser
         # not supported file entry.
         pass
     finally:
-        file_object._Close()
+        if file_object:
+            file_object._Close()
 
     events = []
     events.extend(mediator.event_queue)
     events.extend(mediator.warning_queue)
     events.extend(mediator.recovery_queue)
+    print("Parsing File object" + path_spec.location + " EVENTS: " + str(len(events)))
 
     return events
 

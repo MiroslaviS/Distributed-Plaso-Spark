@@ -8,7 +8,7 @@ class SparkJobFactory:
     def __init__(self, plaso, logger):
         findspark.init()
 
-        spark = SparkSession.builder.appName("PySpark Plaso Testing").config("spark.executor.memory", "1g").config("spark.executor.cores", "2").getOrCreate()
+        spark = SparkSession.builder.appName("PySpark Plaso Testing").getOrCreate()
         # spark = SparkSession.builder.appName("PySpark Plaso").config("spark.python.profile", "true").getOrCreate()
 
         self.sc = spark.sparkContext
@@ -28,7 +28,6 @@ class SparkJobFactory:
         return foo
 
     def upload_spark_dep(self):
-        self.sc.addPyFile('spark_dep/dfvfshadoop.zip')
         self.sc.addPyFile('spark_dep/helpers.zip')
         self.sc.addPyFile('spark_dep/mediators.zip')
         self.sc.addPyFile('spark_dep/formatters.zip')

@@ -140,3 +140,5 @@ docker-app/app/upload_no_process/
 docker-app/app/output_test/
 
 docker-app/app/spark_dep/
+
+spark_dep/
