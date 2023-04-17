@@ -1,0 +1,7 @@
+# Plaso filter file for testing.
+---
+description: Test filter
+type: include
+path_separator: '/'
+paths:
+- '/[s]?bin/[^e].*'
