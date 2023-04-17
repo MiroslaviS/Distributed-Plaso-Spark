@@ -47,6 +47,10 @@ class ArchiveImageHelper:
                     archive_folder = self._create_folder_from_archive(path)
                     for entry in f:
                         extracted_path = os.path.join(archive_folder, entry.pathname)
+                        if extracted_path[-1] == '/':
+                            os.makedirs(extracted_path, exist_ok=True)
+                            continue
+
                         with open(extracted_path, "w") as fsrc:
                             f.readpath(fsrc)
 

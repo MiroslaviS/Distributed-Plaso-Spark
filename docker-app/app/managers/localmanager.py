@@ -61,6 +61,9 @@ class LocalStorageManager(StorageInterface):
                 # Into preprocessed folder
                 processed_file = self.move_file(entry)
                 processed_files.append(processed_file)
+            else:
+                filename = entry.replace(self.preprocessed_folder, "")
+                processed_files.append(filename)
 
         self.uploaded_files = []
         self.log("Preprocess ended, all files ready for HDFS upload!")
