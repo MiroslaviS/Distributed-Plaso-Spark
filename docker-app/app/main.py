@@ -79,6 +79,17 @@ def delete_hdfs():
 
     return make_response({"status": "OK", "result": result}, 200)
 
+@app.route("/list/hdfs")
+def list_hdfs():
+    files = hdfs_storage.get_files()
+    return make_response({"files": files})
+
+@app.route("/list/local")
+def list_app():
+    files = local_storage.list_folder(app.config['PREPROCESSED_FOLDER'])
+
+    return make_response({"files": files})
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=True)
