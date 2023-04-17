@@ -18,15 +18,16 @@ app.config['PREPROCESSED_FOLDER'] = "upload_processed"
 local_storage = LocalStorageManager(app)
 hdfs_storage = DistributedFileManager()
 
-@app.route('/extract')
+@app.route('/extract', methods=['POST'])
 def spark():
-    output_file = request.args.get('output_file')
-    formatter = request.args.get('formatter')
-    plaso_args = request.args.get('plaso_args')
-    partitions = request.args.get('partitions')
+    data = request.get_json()
+    output_file = data.get('output_file')
+    formatter = data.get('formatter')
+    plaso_args = data.get('plaso_args')
+    partitions = data.get('partitions')
 
     if plaso_args:
-        plaso_args = eval(request.args.get('plaso_args'))
+        plaso_args = eval(plaso_args)
 
     plaso_spark = SparkPlaso(app.logger.warning,
                             formatter=formatter,
