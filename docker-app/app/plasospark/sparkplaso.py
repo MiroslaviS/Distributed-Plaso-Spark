@@ -3,7 +3,7 @@ from plasospark.plasowrapper import PlasoWrapper
 from plasospark.sparkjobs import SparkJobFactory
 from managers.distributedmanager import DistributedFileManager
 from formatters.manager import FormatterManager
-
+import time
 
 class SparkPlaso:
     def __init__(self, logger, formatter=None, output_file=None, plaso_args=None, partitions=None):
@@ -32,7 +32,9 @@ class SparkPlaso:
         self.extraction_result_rdd = None
         self.formatted_warnings_rdd = None
         self.formatted_recovery_rdd = None
-
+        self.start_time = None
+        self.end_time = None
+        
     def extraction(self):
 
         if self.formatter is None:
@@ -57,9 +59,11 @@ class SparkPlaso:
 
         if self.partitions:
             extraction_data = self.extraction_files_rdd.repartition(int(self.partitions))
+            self.start_time = time.time()
             self.extraction_result_rdd = self.job_factory.create_events_from_rdd(extraction_data)
             self.logger("Number of partition after repartition: " + str(extraction_data.getNumPartitions()))
         else:
+            self.start_time = time.time()
             self.extraction_result_rdd = self.job_factory.create_events_from_rdd(self.extraction_files_rdd)
 
         if self.formatter:
@@ -71,9 +75,10 @@ class SparkPlaso:
         if self.formatter:
             self.logger("Create response with formatter !")
             formatted_events = self.formatted_events_rdd.collect()
-
+            self.end_time = time.time()
             response = {'events': formatted_events,
-                        'status': f'Events formated to {self.formatter.NAME}'}
+                        'status': f'Events formated to {self.formatter.NAME}',
+                        'time': self.end_time - self.start_time}
         else:
             self.logger("Create response with plaso tools!")
             events = self.extraction_result_rdd.collect()
