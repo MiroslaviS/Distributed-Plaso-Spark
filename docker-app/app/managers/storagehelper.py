@@ -10,7 +10,6 @@ import libarchive
 
 
 class ArchiveImageHelper:
-
     def __init__(self, upload_folder, preprocessed_folder, logger):
         self.extracted_counter = 0
         self._source_scanner = source_scanner.SourceScanner()
@@ -31,8 +30,8 @@ class ArchiveImageHelper:
         try:
             self._source_scanner.Scan(scanner_context)
         except (ValueError, errors.BackEndError) as exception:
-            raise errors.ScannerError(
-                f'Unable to scan source with error: {exception!s}')
+            self.logger(f'Unable to scan source with error: {exception!s} with path: {path}. Skipping')
+            return False, []
 
         source_type = scanner_context.source_type
         if source_type == definitions.SOURCE_TYPE_FILE:
@@ -215,11 +214,12 @@ class ArchiveImageHelper:
 
     def _create_folder_from_archive(self, archive_path, move=True):
         if "." in archive_path:
-            file_name = os.path.basename(archive_path).replace(".", "_")
+            file_name = os.path.basename(archive_path).replace(".", "_") + "_extracted" + str(self.extracted_counter)
+
         else:
             file_name = os.path.basename(archive_path) + "_extracted" + str(self.extracted_counter)
-            self.extracted_counter += 1
 
+        self.extracted_counter += 1
         archive_folder = os.path.dirname(archive_path)
 
         if move:

@@ -9,7 +9,7 @@ fi
 
 if [ -z "$2" ]
 then
-  formatter="json"
+  formatter=""  # empty formatter -> plaso output
 else
   formatter="$2"
 fi
@@ -26,6 +26,13 @@ then
   repartitions=""
 else
   repartitions="$4"
+fi
+
+if [ -z "$5" ]
+then
+  test="False"
+else
+  test="True"
 fi
 
 echo "output: $plaso_output and formatter: $formatter"
@@ -45,7 +52,8 @@ then
   --data '{
     "output_file": "'$plaso_output'",
     "formatter": "'$formatter'",
-    "plaso_args": "'$plaso_args'"}'
+    "plaso_args": "'$plaso_args'",
+    "extraction_test": "'$test'"}'
 else
   curl --location 'localhost:5000/extract' \
   --header 'Content-Type: application/json' \
@@ -53,5 +61,6 @@ else
     "output_file": "'$plaso_output'",
     "formatter": "'$formatter'",
     "plaso_args": "'$plaso_args'",
-    "partitions": "'$repartitions'"}'
+    "partitions": "'$repartitions'",
+    "extraction_test": "'$test'"}'
 fi

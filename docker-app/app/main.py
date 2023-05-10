@@ -6,8 +6,8 @@
 from flask import Flask, request, make_response
 from managers.localmanager import LocalStorageManager
 from managers.distributedmanager import DistributedFileManager
-import findspark
-findspark.init()    # This is necessary to be before importing sparkContext !
+# import findspark
+# findspark.init()    # This is necessary to be before importing sparkContext !
 
 from plasospark.sparkplaso import SparkPlaso
 
@@ -25,15 +25,18 @@ def spark():
     formatter = data.get('formatter')
     plaso_args = data.get('plaso_args')
     partitions = data.get('partitions')
+    test = eval(data.get("extraction_test", "False"))
 
     if plaso_args:
         plaso_args = eval(plaso_args)
 
+    app.logger.warning(f"EXTRACTING AS TEST: {test}")
     plaso_spark = SparkPlaso(app.logger.warning,
                             formatter=formatter,
                             output_file=output_file,
                             plaso_args=plaso_args,
-                            partitions=partitions)
+                            partitions=partitions,
+                            extraction_test=test)
 
     response = plaso_spark.extraction()
 

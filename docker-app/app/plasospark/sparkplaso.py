@@ -5,8 +5,9 @@ from managers.distributedmanager import DistributedFileManager
 from formatters.manager import FormatterManager
 import time
 
+
 class SparkPlaso:
-    def __init__(self, logger, formatter=None, output_file=None, plaso_args=None, partitions=None):
+    def __init__(self, logger, formatter=None, output_file=None, plaso_args=None, partitions=None, extraction_test=False):
         self.plaso = PlasoWrapper(storage_file=output_file, plaso_arguments=plaso_args)
         self.job_factory = SparkJobFactory(self.plaso, logger)
         self.storage_manager = DistributedFileManager()
@@ -18,6 +19,7 @@ class SparkPlaso:
         else:
             self.formatter = None
 
+        self.extraction_test = extraction_test
         self.file_entries_rdd = None
         self.path_specs_rdd = None
         self.signature_parsers_rdd = None
@@ -34,7 +36,14 @@ class SparkPlaso:
         self.formatted_recovery_rdd = None
         self.start_time = None
         self.end_time = None
-        
+        self.test_events_size = None
+
+    def show_partitions(self, data):
+        skew_test = data.glom().map(len).collect()  # get length of each partition
+        skew_string = f"BEFORE REPART {min(skew_test)}, {max(skew_test)}, {sum(skew_test) / len(skew_test)}, {len(skew_test)}\n" \
+                      f"Array of partitions: {str(skew_test)}"  # check if skewed
+        self.logger(skew_string)
+
     def extraction(self):
 
         if self.formatter is None:
@@ -57,14 +66,32 @@ class SparkPlaso:
 
         self.logger("Number of patitions: " + str(self.extraction_files_rdd.getNumPartitions()))
 
+        if self.extraction_test:
+            # Show partition data distribution before repartition
+            self.show_partitions(self.extraction_files_rdd)
+
         if self.partitions:
-            extraction_data = self.extraction_files_rdd.repartition(int(self.partitions))
-            self.start_time = time.time()
+            extraction_data = self.job_factory.repartitionBeforeExtract(self.extraction_files_rdd, int(self.partitions))
+
+            if self.extraction_test:
+                self.show_partitions(extraction_data)
+
             self.extraction_result_rdd = self.job_factory.create_events_from_rdd(extraction_data)
-            self.logger("Number of partition after repartition: " + str(extraction_data.getNumPartitions()))
+
+            if self.extraction_test:
+                self.start_time = time.time()
+                extracted_events = self.extraction_result_rdd.collect()
+                self.test_events_size = len(extracted_events)
+                self.extraction_time = time.time() - self.start_time
+
         else:
-            self.start_time = time.time()
             self.extraction_result_rdd = self.job_factory.create_events_from_rdd(self.extraction_files_rdd)
+
+            if self.extraction_test:
+                self.start_time = time.time()
+                extracted_events = self.extraction_result_rdd.collect()
+                self.test_events_size = len(extracted_events)
+                self.extraction_time = time.time() - self.start_time
 
         if self.formatter:
             self.formatted_events_rdd = self.job_factory.create_formatted_rdd(self.extraction_result_rdd, self.formatter)
@@ -73,12 +100,24 @@ class SparkPlaso:
 
     def create_response(self):
         if self.formatter:
-            self.logger("Create response with formatter !")
-            formatted_events = self.formatted_events_rdd.collect()
-            self.end_time = time.time()
-            response = {'events': formatted_events,
-                        'status': f'Events formated to {self.formatter.NAME}',
-                        'time': self.end_time - self.start_time}
+            if self.extraction_test:
+                self.logger("EXTRACTION AS TEST CASE!!")
+
+                response = {'status': f'Events formated to {self.formatter.NAME}',
+                            'extraction_time': self.extraction_time,
+                            'events': self.test_events_size},
+
+            else:
+                self.logger("Create response with formatter !")
+
+                formatted_events = self.formatted_events_rdd.collect()
+                self.end_time = time.time()
+
+                response = {'events': formatted_events,
+                            'status': f'Events formated to {self.formatter.NAME}',
+                            'time': self.end_time - self.start_time,
+                            'extraction_time': self.extraction_time}
+
         else:
             self.logger("Create response with plaso tools!")
             events = self.extraction_result_rdd.collect()

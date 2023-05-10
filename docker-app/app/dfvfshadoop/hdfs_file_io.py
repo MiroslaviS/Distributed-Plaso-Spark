@@ -14,7 +14,9 @@ class HDFSFile(FileIO):
 
     def _Close(self):
         self._is_open = False
-        self._file_object.close()
+        if self._file_object:
+            self._file_object.close()
+
         self._file_object = None
 
     def _Open(self, mode='rb'):

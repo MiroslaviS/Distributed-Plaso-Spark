@@ -28,6 +28,8 @@ class LocalStorageManager(StorageInterface):
         pass
 
     def save_files(self, files):
+        self.uploaded_files = []
+
         for file in files:
             self.save_file(file)
 
@@ -74,11 +76,12 @@ class LocalStorageManager(StorageInterface):
         os.makedirs(self.preprocessed_folder, exist_ok=True)
 
     def delete_file(self, filename):
-        if os.path.isdir(filename):
-            import shutil
-            shutil.rmtree(filename, ignore_errors=True)
-        else:
-            os.remove(filename)
+        if os.path.exists(filename):
+            if os.path.isdir(filename):
+                import shutil
+                shutil.rmtree(filename, ignore_errors=True)
+            else:
+                os.remove(filename)
 
     def list_folder(self, path):
         files = os.listdir(path)

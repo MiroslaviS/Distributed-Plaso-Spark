@@ -1,10 +1,10 @@
-
 from dfvfs.path.factory import Factory
 from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS
 from dfvfs.resolver.resolver import Resolver
 from managers.interface import StorageInterface
 import os
 from pyarrow import input_stream
+
 
 class DistributedFileManager(StorageInterface):
     def __init__(self):

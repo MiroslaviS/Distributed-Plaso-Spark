@@ -130,7 +130,6 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
                         break
                 self.parser_mediator.ProduceEventDataStream(active_data_stream)
 
-
             else:
                 if event.spark_file_location != active_data_stream.path_spec.location:
                     for stream in data_streams:

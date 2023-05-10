@@ -1,15 +1,15 @@
 import findspark
+findspark.init()
+
 from pyspark.sql import SparkSession
 from dfvfs.path.hdfs_path_specification import HDFSPathSpec
 import json
-from pyspark import SparkConf
+
 
 class SparkJobFactory:
     def __init__(self, plaso, logger):
-        findspark.init()
-
         spark = SparkSession.builder.appName("PySpark Plaso Testing").getOrCreate()
-        # spark = SparkSession.builder.appName("PySpark Plaso").config("spark.python.profile", "true").getOrCreate()
+        # spark = SparkSession.builder.appName("PySpark Plaso").config("spark.driver.memory", "3g").config("spark.executor.instances", "4").getOrCreate()
 
         self.sc = spark.sparkContext
         self.plaso = plaso
@@ -22,10 +22,11 @@ class SparkJobFactory:
     def create_broadcast_mediator(self, data):
         self.broadcast_mediator = self.sc.broadcast(data)
 
-    def test(self, configuration):
-        foo = self.sc.parallelize([configuration])
+    def repartitionBeforeExtract(self, extraction_files, partitions_no):
+        import random
+        repartition_files = extraction_files.partitionBy(partitions_no, lambda _: random.randint(0, partitions_no-1))
 
-        return foo
+        return repartition_files
 
     def upload_spark_dep(self):
         self.sc.addPyFile('spark_dep/helpers.zip')

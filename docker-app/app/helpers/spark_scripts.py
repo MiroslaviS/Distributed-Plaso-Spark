@@ -77,7 +77,7 @@ def expand_file_parsers(file_signature):
         parsers.append('filestat')
 
     for parser in parsers:
-        file_parsers.append((file_entry.path_spec, parser))
+        file_parsers.append((parser, file_entry.path_spec))
 
     return file_parsers
 
@@ -90,7 +90,7 @@ def parse(parsing_rdd, mediator_data_broadcast):
     """
     from plaso.parsers import manager as parsers_manager
 
-    path_spec, parser_name = parsing_rdd
+    parser_name, path_spec = parsing_rdd
     file_entry = path_resolver.Resolver.OpenFileEntry(path_spec)
 
     parsers = parsers_manager.ParsersManager.GetParserObjects()
