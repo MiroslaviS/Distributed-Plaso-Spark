@@ -1,3 +1,4 @@
+""" dfvfs implementation of HDFS file specification """
 
 from dfvfs.path.location_path_spec import LocationPathSpec
 from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS

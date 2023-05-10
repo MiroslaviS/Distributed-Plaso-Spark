@@ -1,3 +1,5 @@
+""" dfvfs implementation of HDFS file entry and file directory """
+
 from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS
 
 from dfdatetime import posix_time as dfdatetime_posix_time

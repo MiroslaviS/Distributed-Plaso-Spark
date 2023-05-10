@@ -1,3 +1,5 @@
+""" Interface for storage manager"""
+
 from abc import ABC, abstractmethod
 
 

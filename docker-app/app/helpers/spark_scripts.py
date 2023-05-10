@@ -1,3 +1,4 @@
+""" Script used in Spark jobs during extraction """
 
 from dfvfs.resolver import resolver as path_resolver
 from mediators import mediator as spark_mediator
@@ -7,19 +8,24 @@ from plaso.engine import worker
 
 
 def create_file_entry_rdd(path_spec):
+    """ Creates HDFSFileEntry objects from HDFSPathSpec
+    Params:
+        path_spec (HDFSPathSpec): HDFS path specification
+    Returns:
+        HDFSFileEntry: HDFS File Entry created from path specification
+    """
     file_entry = path_resolver.Resolver.OpenFileEntry(path_spec)
 
     return file_entry
 
 
-def check_if_metadata(file_rdd):
-    file_entry, parser_filter = file_rdd
-    extraction_worker = worker.EventExtractionWorker(parser_filter_expression=parser_filter)
-
-    return file_entry, extraction_worker._IsMetadataFile(file_entry)
-
-
 def create_event_sources(path_spec):
+    """ Creates event source from path specification
+    Params:
+        path_spec (HDFSPathSpec): HDFS path specification for file
+    Returns:
+        FileEntryEventSource: Created event source from path specification
+    """
     from plaso.containers import event_sources
     from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS
 
@@ -32,6 +38,12 @@ def create_event_sources(path_spec):
 
 
 def create_data_stream_event(path_spec):
+    """ Creates data streams event from path specification
+    Params:
+        path_spec (HDFSPathSpec): HDFS path specification for file
+    Returns:
+        DataStreamEventSource: Data stream from path specification
+    """
     from plaso.containers import events
     data_stream_event = events.EventDataStream()
     data_stream_event.path_spec = path_spec
@@ -41,9 +53,12 @@ def create_data_stream_event(path_spec):
 
 def get_signature_parser(signature_rdd, broadcast_config_parser):
     """
-
-    :param signature_rdd:
-    :return: file_entry, parser_names
+        Determines possible parsers for file by calculated file signature
+    Params:
+        signature_rdd (HDFSFileEntry): File Entry for HDFS file
+        broadcast_config_parser (ProcessingConfiguration): Parsers configurations
+    Returns:
+        (FileEntry, [str]): List of parser names for FileEntry
     """
     file_entry = signature_rdd
     parser_filter_expression = broadcast_config_parser.value
@@ -61,9 +76,13 @@ def get_signature_parser(signature_rdd, broadcast_config_parser):
 
 def expand_file_parsers(file_signature):
     """
-
-    :param file_signature:
-    :return: [(path_spec, parser)]
+        Creates tuples of the same file entry but all it's parsers.
+        Add filestat parser for parsing file statistics if not present
+        in parser list
+    Params:
+        file_signature ((FileEntry, [str])): File entry with all possible parsers
+    Returns:
+        [(parser, HDFSPathSpec)]: List of all parsers for file entry
     """
     file_entry, parsers = file_signature
     file_parsers = []
@@ -84,9 +103,14 @@ def expand_file_parsers(file_signature):
 
 def parse(parsing_rdd, mediator_data_broadcast):
     """
-
-    :param parsing_rdd:
-    :return: (event_queue, warning_queue, recovery_queue) : ([EventData], [EventWarning], [WarningRecovery])
+        Parse file entry with given parser. Creates Parser object
+        and Spark ParserMediator and starts the extraction on given
+        file with Parser
+    Params:
+        parsing_rdd ((str, HDFSPathSpec)): Name of parser which needs to be used for file specified by path specification
+        mediator_data_broadcast (MediatorHolder): Data for creating ParserMediator for extraction process
+    Returns:
+        [EventData]: List of extracted event data
     """
     from plaso.parsers import manager as parsers_manager
 
@@ -102,13 +126,6 @@ def parse(parsing_rdd, mediator_data_broadcast):
     mediator.SetFileEntry(file_entry)
 
     from plaso.parsers import interface as parsers_interface
-
-    # if isinstance(parser, parsers_interface.FileEntryParser):
-    #     parser.Parse(mediator)
-    # elif isinstance(parser, parsers_interface.FileObjectParser):
-    #     file_object = file_entry.GetFileObject()
-    #
-    #     parser.Parse(mediator, file_object)
 
     try:
         if isinstance(parser, parsers_interface.FileEntryParser):
@@ -132,6 +149,3 @@ def parse(parsing_rdd, mediator_data_broadcast):
     print("Parsing File object" + path_spec.location + " EVENTS: " + str(len(events)))
 
     return events
-
-    # return mediator.event_queue, mediator.warning_queue, mediator.recovery_queue
-    # return "[" + parser.NAME + "]" + path_spec.location, len(mediator.event_queue), len(mediator.warning_queue), len(mediator.recovery_queue)

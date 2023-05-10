@@ -1,4 +1,4 @@
-
+""" Component for extracting content of archives/images """
 from dfvfs.helpers import source_scanner
 from dfvfs.resolver import context as dfvfs_context
 import os
@@ -10,7 +10,14 @@ import libarchive
 
 
 class ArchiveImageHelper:
+    """ Image/Archive helper for extracting content """
     def __init__(self, upload_folder, preprocessed_folder, logger):
+        """ Initialize ArchiveImageHelper
+        Params:
+            upload_folder (str): Path to upload folder in local storage system
+            preprocessed_folder (str): Path to folder with processed files
+            logger (logging.Logger): Logger for debug
+        """
         self.extracted_counter = 0
         self._source_scanner = source_scanner.SourceScanner()
         self._resolver_context = dfvfs_context.Context()
@@ -19,6 +26,12 @@ class ArchiveImageHelper:
         self.logger = logger
 
     def scan_source(self, path):
+        """ Determines the type of given file and start preprocessing if needed
+        Params:
+            path (str): path to scanning file
+        Returns:
+             (Bool, [str]): List of extracted files from scanned file and flag for deleting the extracting file
+        """
         delete_file = False
         source_path_spec = path_spec_factory.Factory.NewPathSpec(
             definitions.TYPE_INDICATOR_OS, location=path)
@@ -75,6 +88,10 @@ class ArchiveImageHelper:
     def _scan_media_storage(self, source_path):
         """
             Use plaso command line tool for extracting images
+        Params:
+            source_path (str): Path to file for image export
+        Returns:
+            (int, str): Return code, path to exported image folder
         """
         import subprocess
 
@@ -87,14 +104,14 @@ class ArchiveImageHelper:
         return export_return_code, export_image_path
 
     def _ScanSourceForArchive(self, path_spec):
-        """Determines if a path specification references an archive file.
+        """ Determines if a path specification references an archive file.
+            Also check if the archive is not compressed.
 
         Args:
-          path_spec (dfvfs.PathSpec): path specification of the data stream.
+          path_spec (PathSpec): path specification of file.
 
         Returns:
-          dfvfs.PathSpec: path specification of the archive file or None if not
-              an archive file.
+            PathSpec|None: path specification of archive or None
         """
         try:
             type_indicators = (
@@ -140,6 +157,12 @@ class ArchiveImageHelper:
             type_indicators[0], location='/', parent=path_spec)
 
     def _extract_compressed_file(self, path_spec):
+        """ Extract compressed data from file according to compressed type
+        Params:
+            path_spec (PathSpec): Path specification of compressed file
+        Returns:
+             str: Path to decompressed file
+        """
         type_indicator = path_spec.type_indicator
         file_path = path_spec.parent.location
 
@@ -157,6 +180,12 @@ class ArchiveImageHelper:
         return saved_file
 
     def _process_xz_compression(self, file_path):
+        """ Decompress xz file format
+        Params:
+            file_path (str): Path to compressed xz file
+        Returns:
+            str: Path to decompressed file
+        """
         import lzma
         with lzma.open(file_path) as f:
             folder = self._create_folder_from_archive(file_path)
@@ -166,6 +195,12 @@ class ArchiveImageHelper:
         return saved_file
 
     def _process_gz_compression(self, file_path):
+        """ Decompress gz file format
+        Params:
+            file_path (str): Path to compressed gz file
+        Returns:
+            str: Path to decompressed file
+        """
         import gzip
         with gzip.open(file_path) as f:
             folder = self._create_folder_from_archive(file_path)
@@ -175,6 +210,12 @@ class ArchiveImageHelper:
         return saved_file
 
     def _process_bzip2_compression(self, file_path):
+        """ Decompress bz2 file format
+        Params:
+            file_path (str): Path to compressed bz2 file
+        Returns:
+            str: Path to decompressed file
+        """
         import bz2
         with bz2.open(file_path) as f:
             folder = self._create_folder_from_archive(file_path)
@@ -184,6 +225,12 @@ class ArchiveImageHelper:
         return saved_file
 
     def _scan_for_compression(self, path_spec):
+        """ Determines the type of compression for given file
+        Params:
+            path_spec (PathSpec): Path specification of possible compressed file
+        Returns:
+             (Bool, PathSpec): True if is compressed file, Path specification of file
+        """
         try:
             type_indicators = dfvfs_analyzer.Analyzer.GetCompressedStreamTypeIndicators(path_spec, self._resolver_context)
         except IOError:
@@ -213,6 +260,13 @@ class ArchiveImageHelper:
         return True, path_spec
 
     def _create_folder_from_archive(self, archive_path, move=True):
+        """ Creates folder to represent the extracted archive with files
+        Params:
+            archive_path (str): Path to archive file
+            move (bool): Determines if the archive needs to be moved to preprocessed folder
+        Returns:
+             str: Path to created folder
+        """
         if "." in archive_path:
             file_name = os.path.basename(archive_path).replace(".", "_") + "_extracted" + str(self.extracted_counter)
 
@@ -232,6 +286,14 @@ class ArchiveImageHelper:
         return folder_name
 
     def _save_compressed_data(self, data, file_path, folder_path):
+        """ Determines encoding of compressed data and saved them to new file
+        Params:
+            data (bytes): Data inside compressed file
+            file_path (str): Path to compressed file
+            folder_path (str): Path to folder for new data
+        Returns:
+              str: Path to new file with decompressed data
+        """
         filename = file_path.split('/')[-1].split('.')[0]
         file_path = os.path.join(folder_path, filename)
         import chardet

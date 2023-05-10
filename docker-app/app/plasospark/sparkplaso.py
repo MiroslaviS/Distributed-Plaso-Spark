@@ -1,4 +1,7 @@
-
+"""
+    Main component for controling the Plaso extraction with Plaso extractors
+    and Spark jobs
+"""
 from plasospark.plasowrapper import PlasoWrapper
 from plasospark.sparkjobs import SparkJobFactory
 from managers.distributedmanager import DistributedFileManager
@@ -7,7 +10,19 @@ import time
 
 
 class SparkPlaso:
+    """ Sparkplaso tool controller"""
+
     def __init__(self, logger, formatter=None, output_file=None, plaso_args=None, partitions=None, extraction_test=False):
+        """
+            Initializes a Sparkplaso tool
+        Params:
+            logger (logging.Logger): Flask logger for logging
+            formatter (Optional[str]): Name of the preferred formatter
+            output_file (Optional[str]): Path for Plaso output file
+            plaso_args (Optional[[str]]): Arguments for Plaso tools wrapper
+            partitions (Optional[str]): Number of partitions used in repartition
+            extraction_test (Optional[str]): Flag for testing purpose
+        """
         self.plaso = PlasoWrapper(storage_file=output_file, plaso_arguments=plaso_args)
         self.job_factory = SparkJobFactory(self.plaso, logger)
         self.storage_manager = DistributedFileManager()
@@ -39,13 +54,22 @@ class SparkPlaso:
         self.test_events_size = None
 
     def show_partitions(self, data):
+        """
+            Logs data_skew information about the given RDD
+        Params:
+            data (RDD): Data stored in Spark RDD object
+        """
         skew_test = data.glom().map(len).collect()  # get length of each partition
         skew_string = f"BEFORE REPART {min(skew_test)}, {max(skew_test)}, {sum(skew_test) / len(skew_test)}, {len(skew_test)}\n" \
                       f"Array of partitions: {str(skew_test)}"  # check if skewed
         self.logger(skew_string)
 
     def extraction(self):
-
+        """
+            Starts the extraction process from HDFS stored data
+        Returns:
+            dict: Result of the extraction
+        """
         if self.formatter is None:
             # No formatter means use native Plaso output -> .plaso format (SQLite table)
             self.create_start_extraction()
@@ -99,17 +123,18 @@ class SparkPlaso:
         return self.create_response()
 
     def create_response(self):
+        """
+            Creates extraction data as response in JSON format
+        Returns:
+            dict: Result from extraction
+        """
         if self.formatter:
             if self.extraction_test:
-                self.logger("EXTRACTION AS TEST CASE!!")
-
                 response = {'status': f'Events formated to {self.formatter.NAME}',
                             'extraction_time': self.extraction_time,
                             'events': self.test_events_size},
 
             else:
-                self.logger("Create response with formatter !")
-
                 formatted_events = self.formatted_events_rdd.collect()
                 self.end_time = time.time()
 
@@ -119,7 +144,6 @@ class SparkPlaso:
                             'extraction_time': self.extraction_time}
 
         else:
-            self.logger("Create response with plaso tools!")
             events = self.extraction_result_rdd.collect()
 
             self.create_plaso_output(events)
@@ -131,6 +155,11 @@ class SparkPlaso:
         return response
 
     def create_plaso_output(self, events):
+        """
+            Creates Plaso formated events and save them into plaso output file
+        Args:
+            events ([EventData|ExtractionWarning|RecoveryWarning])
+        """
         from plaso.containers import warnings
 
         self.events_data = [event for event in events if (not isinstance(event, warnings.ExtractionWarning) and not isinstance(event, warnings.RecoveryWarning))]
@@ -145,28 +174,54 @@ class SparkPlaso:
         self.create_end_plaso_extraction()
 
     def create_start_extraction(self):
+        """
+            Creates Plaso start of extraction and add to extraction container
+        """
         self.plaso.create_plaso_start_containers()
 
     def create_end_plaso_extraction(self):
+        """
+            Creates Plaso end of extraction and add to extraction container
+        """
         self.plaso.create_plaso_complete_containers()
 
     def process_plaso_event_sources(self):
+        """
+            Collects event sources and add the sources
+            into Plaso container
+        """
         event_sources = self.event_source_rdd.collect()
         self.plaso.add_event_source(event_sources)
 
     def process_event_data(self):
+        """
+            Collects data stream data and add the extracted data
+            to Plaso container and process the event data from extraction
+        """
         data_streams = self.event_data_stream_rdd.collect()
 
         self.plaso.add_event(self.events_data, data_streams)
 
-        return self.plaso.process_event_data()
+        self.plaso.process_event_data()
 
     def process_warning_data(self):
+        """
+            Calls Plasowrapper to process warning data
+            from extraction
+        """
         self.plaso.create_plaso_warning_containers(self.warning_data)
 
     def process_recovery_data(self):
+        """
+            Calls Plasowrapper to process recovery warning
+            data from extraction
+        """
         self.plaso.create_plaso_recovery_containers(self.recovery_data)
 
     def _list_hdfs_files(self):
+        """
+            List all files stored in hdfs for extraction
+            and creates RDD from listes files as [HDFSPathSpec]
+        """
         files = self.storage_manager.get_files()
         self.path_specs_rdd = self.job_factory.create_files_path_spec_rdd(files)

@@ -1,3 +1,5 @@
+""" Interface for Spark formatter """
+
 from abc import ABC, abstractmethod
 
 

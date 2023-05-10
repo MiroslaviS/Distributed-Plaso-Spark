@@ -1,4 +1,6 @@
-
+"""
+    Plaso component wrapping the Original Plaso components
+"""
 from plaso.single_process.extraction_engine import SingleProcessEngine
 from plaso.parsers import manager as parsers_manager
 from plaso.engine import worker
@@ -10,11 +12,19 @@ from plaso.containers import counts
 
 
 class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
+    """ Wrapper for Plaso log2timeline tool"""
+
     def __init__(self, storage_file=None, plaso_arguments=None):
+        """
+
+        Params:
+            storage_file (Optional[str]): Path for Plaso output file
+            plaso_arguments (Optional[[str]]): Arguments for Plaso Log2Timeline tools
+        """
         super(PlasoWrapper, self).__init__()
 
         if plaso_arguments is None:
-            plaso_arguments = ['--debug', '--single-process']
+            plaso_arguments = ['--debug', '--single-process', '--parsers', '!rplog']    #rplog causes Spark jobs to not finish
 
         if storage_file is None:
             storage_file = '/output.plaso'
@@ -33,6 +43,11 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
         self.create_extraction_configs(plaso_arguments)
 
     def create_extraction_configs(self, plaso_arguments):
+        """
+            Creates all necessary Plaso components for extraction
+        Params:
+            plaso_arguments ([str]): Arguments for Plaso Log2Timeline tool initialization
+        """
         self.ParseArguments(plaso_arguments)
         self._expanded_parser_filter_expression = (self._GetExpandedParserFilterExpression(
                                                                         self.extraction_engine.knowledge_base))
@@ -59,6 +74,12 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
                                                 for parser_count in self.storage_writer.GetAttributeContainers('parser_count')})
 
     def create_mediator_holder(self):
+        """ Creates Holder object for Plaso ParserMediator objects
+            and add the necessary data to the holder object
+
+            Returns:
+                MediatorHolder: Holder for ParserMediator data
+        """
         from mediators import holder
 
         mediator_holder = holder.MediatorHolder(self.extraction_engine.knowledge_base,
@@ -68,6 +89,10 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
         return mediator_holder
 
     def create_plaso_start_containers(self):
+        """
+            Creates session representing the start of Plaso
+            extraction and configures the extraction parameters
+        """
         self.session = engine.BaseEngine.CreateSession()
         enabled_parsers = self._expanded_parser_filter_expression.split(',')
 
@@ -95,26 +120,53 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
         self.storage_writer.AddAttributeContainer(system_configuration)
 
     def create_plaso_complete_containers(self):
+        """
+            Creates session complete representing the end of
+            Plaso extraction and closes the Plaso storage
+        """
         session_completed = self.session.CreateSessionCompletion()
         self.storage_writer.AddAttributeContainer(session_completed)
 
         self.storage_writer.Close()
 
     def create_plaso_warning_containers(self, warning_sources):
+        """
+            Creates Attribute Containers for extraction warnings
+            from extraction
+        Params:
+            warning_sources ([ExtractionWarning]): Warning created in extraction
+        """
         for warning in warning_sources:
             self.storage_writer.AddAttributeContainer(warning)
             self.parser_mediator._number_of_extraction_warnings += 1
 
     def create_plaso_recovery_containers(self, recovery_sources):
+        """
+            Creates Attribute Containers for extraction recovery
+            warnings data from extraction
+        Params:
+            recovery_sources ([RecoveryWarning]): Recovery Warnings created in extraction
+        """
         for recovery in recovery_sources:
             self.storage_writer.AddAttributeContainer(recovery)
             self.parser_mediator._number_of_recovery_warnings += 1
 
     def add_event_source(self, event_sources):
+        """
+            Add EventSources used in extraction to Plaso storage
+        Params:
+            event_sources ([EventSource]): Event sources from extraction
+        """
         for event_source in event_sources:
             self.parser_mediator.ProduceEventSource(event_source)
 
     def add_event_data_stream(self, event_data_streams):
+        """
+            Add data streams used in extraction to Plaso storage
+        Params:
+            event_data_streams ([EventDataStream]): Data streams from EventSources used in extraction
+        :return:
+        """
         for stream_event in event_data_streams:
             self.parser_mediator.ProduceEventDataStream(stream_event)
 
@@ -144,6 +196,10 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
         return parsers
 
     def process_event_data(self):
+        """
+            Read EventData from Plaso storage and applies Plaso formating
+            to extracted Event Data and stored formated Events into Plaso output
+        """
         event_data = self.storage_writer.GetFirstWrittenEventData()
 
         while event_data:
@@ -151,8 +207,11 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
 
             event_data = self.storage_writer.GetNextWrittenEventData()
 
+
+        # Increase timeliner counter for Plaso output compatibility in pinfo tool
         for key, value in self.extraction_engine._event_data_timeliner.parsers_counter.items():
             parser_count = self.extraction_engine._parsers_counter.get(key, None)
+
             if parser_count:
                 parser_count.number_of_events += value
                 self.storage_writer.UpdateAttributeContainer(parser_count)
@@ -161,9 +220,10 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
                 self.extraction_engine._parsers_counter[key] = parser_count
                 self.storage_writer.AddAttributeContainer(parser_count)
 
-        # TODO: remove after completion event and event data split.
+        # Increase parser mediator counter for Plaso output compatibility in pinfo tool
         for key, value in self.parser_mediator.parsers_counter.items():
             parser_count = self.extraction_engine._parsers_counter.get(key, None)
+
             if parser_count:
                 parser_count.number_of_events += value
                 self.storage_writer.UpdateAttributeContainer(parser_count)
@@ -173,10 +233,26 @@ class PlasoWrapper(log2timeline_tool.Log2TimelineTool):
                 self.storage_writer.AddAttributeContainer(parser_count)
 
     def get_parsers(self):
+        """ Get all available parsers
+
+        Returns:
+            [FileObjectParser|FileEntryParser]: List of Plaso Parsers
+        """
         return self.parsers
 
     def get_filter_expression(self):
+        """
+            Get filter expression representing available parser in extraction
+
+        Returns:
+            str: String representing filter of Parsers
+        """
         return self.configuration.parser_filter_expression
 
     def get_nonsig_parsers(self):
+        """
+            Get non-signature parsers list
+        Returns:
+            [str]: Names of non signature parsers
+        """
         return self.non_sig_parsers

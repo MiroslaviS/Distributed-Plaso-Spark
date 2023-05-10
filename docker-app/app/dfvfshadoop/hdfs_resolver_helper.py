@@ -1,3 +1,4 @@
+""" dfvfs implementation of HDFS resolver """
 
 from dfvfs.resolver_helpers.resolver_helper import ResolverHelper
 from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS

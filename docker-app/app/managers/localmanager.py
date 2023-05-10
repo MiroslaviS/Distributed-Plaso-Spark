@@ -1,3 +1,5 @@
+""" Component providing operations on local file system """
+
 import os
 
 from pyarrow import fs, input_stream
@@ -6,7 +8,12 @@ from managers.storagehelper import ArchiveImageHelper
 
 
 class LocalStorageManager(StorageInterface):
+    """ Manager providing I/O operations for local storage system"""
     def __init__(self, app):
+        """ Initialize Local storage manager
+        Params:
+            app (Flask): Flask application object
+        """
         self.log = app.logger.warning
 
         self.uploaded_files = []
@@ -19,21 +26,37 @@ class LocalStorageManager(StorageInterface):
         self._create_internal_folders()
 
     def create_folder(self, path):
+        """ Just implementing interface method, not needed in local storage manager """
         pass
 
     def delete_folder(self, path):
+        """
+            Delete folder on given path
+        Params:
+            path (str): Path on local storage system for deleting folder
+        """
         files = self.list_folder(path)
         for file in files:
             self.delete_file(file)
-        pass
 
     def save_files(self, files):
+        """
+            Save files to local storage upload folder
+        Params:
+            files ([File]): List of files
+        """
         self.uploaded_files = []
 
         for file in files:
             self.save_file(file)
 
     def save_file(self, file):
+        """ Save given file data into upload folder
+        Params:
+            file (File): File with data for saving
+        Returns:
+            (str): Path to saved file
+        """
         filename = os.path.join(self.upload_folder, file.filename)
         file.save(filename)
 
@@ -42,7 +65,10 @@ class LocalStorageManager(StorageInterface):
         return filename
 
     def preprocess_files(self):
-        self.log("Starting preprocess process, deleting saved files cache")
+        """ Preprocess uploaded files in upload folder
+        Returns:
+            [str]: List of paths of preprocessed files
+        """
         processed_files = list()
 
         while self.uploaded_files:
@@ -72,10 +98,15 @@ class LocalStorageManager(StorageInterface):
         return processed_files
 
     def _create_internal_folders(self):
+        """ Creates internal folder for upload and preprocessing """
         os.makedirs(self.upload_folder, exist_ok=True)
         os.makedirs(self.preprocessed_folder, exist_ok=True)
 
     def delete_file(self, filename):
+        """ Delete file from local storage system
+        Params:
+            filename (str): Path to deleting file
+        """
         if os.path.exists(filename):
             if os.path.isdir(filename):
                 import shutil
@@ -84,6 +115,12 @@ class LocalStorageManager(StorageInterface):
                 os.remove(filename)
 
     def list_folder(self, path):
+        """ List content of folder on given path
+        Params:
+            path (str): Path to folder
+        Returns:
+            [str]: List of files in given folder
+        """
         files = os.listdir(path)
         list_files = []
 
@@ -94,17 +131,25 @@ class LocalStorageManager(StorageInterface):
         return list_files
 
     def clear_local_upload_folder(self):
+        """ Delete all files in upload folder """
         files = self.list_folder(self.upload_folder)
 
         for file in files:
             self.delete_file(file)
 
     def clear_hdfs_upload_folder(self):
+        """ Delete all files in preprocessed folder """
         files = self.list_folder(self.preprocessed_folder)
         for file in files:
             self.delete_file(file)
 
     def move_file(self, file_path):
+        """ Move file from upload folder to preprocessed folder
+        Params:
+            file_path (str): Path to file
+        Returns:
+             str: Path to moved files
+        """
         destination = file_path.replace(self.upload_folder, self.preprocessed_folder)
         # filename = file_path.split('/')[-1]
         # destination = os.path.join(self.preprocessed_folder, filename)

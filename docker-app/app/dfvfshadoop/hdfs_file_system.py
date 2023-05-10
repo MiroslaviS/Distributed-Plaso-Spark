@@ -1,3 +1,4 @@
+""" dfvfs implementation of HDFS file system"""
 
 from dfvfs.vfs.file_system import FileSystem
 from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS
