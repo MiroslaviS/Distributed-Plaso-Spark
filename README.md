@@ -13,7 +13,7 @@ There is prebuilt image for Webservice Plasospark
 
 ## Build
 For instruction how to build the tool images see [Installation guide](https://github.com/MiroslaviS/Distributed-Plaso-Spark/wiki/Installation-guide).
-And also see webservice [Dockerfile](https://github.com/MiroslaviS/Distributed-Plaso-Spark/blob/master/docker-app/Dockerfile) and Spark [Dockerfile](https://github.com/MiroslaviS/Distributed-Plaso-Spark/blob/master/spark/Dockerfile).
+Also see Webservice [Dockerfile](https://github.com/MiroslaviS/Distributed-Plaso-Spark/blob/master/docker-app/Dockerfile) and Spark [Dockerfile](https://github.com/MiroslaviS/Distributed-Plaso-Spark/blob/master/spark/Dockerfile).
 
 ## Results
 Testing results can be seen in wiki page [Test Results](https://github.com/MiroslaviS/Distributed-Plaso-Spark/wiki/Plasospark-test-results).
