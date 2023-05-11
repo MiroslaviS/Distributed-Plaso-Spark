@@ -13,7 +13,8 @@ services:
       - "54987:9870"
       - "54988:8020"
     volumes:
-      - .\volumes\namenode:/home/hadoop/name
+#      - .\volumes\namenode:/home/hadoop/name   # For Windows systems
+      - ./volumes/namenode:/home/hadoop/name    # For UNIX systems
 
   datanode1:
     image: registry.gitlab.com/rychly-edu/docker/docker-hdfs:3.2.1
@@ -29,7 +30,8 @@ services:
 #      - "9865"
 #      - "9867"
     volumes:
-      - .\volumes\datanode1:/home/hadoop/data
+#      - .\volumes\datanode1:/home/hadoop/data  # For Windows systems
+      - ./volumes/datanode1:/home/hadoop/data   # For UNIX systems
 
   datanode2:
     image: registry.gitlab.com/rychly-edu/docker/docker-hdfs:3.2.1
@@ -45,7 +47,9 @@ services:
 #      - "9865"
 #      - "9867"
     volumes:
-      - .\volumes\datanode2:/home/hadoop/data
+#      - .\volumes\datanode2:/home/hadoop/data   # For Windows systems
+      - ./volumes/datanode2:/home/hadoop/data   # For UNIX systems
+
 
   datanode3:
     image: registry.gitlab.com/rychly-edu/docker/docker-hdfs:3.2.1
@@ -61,7 +65,8 @@ services:
 #      - "9865"
 #      - "9867"
     volumes:
-      - .\volumes\datanode3:/home/hadoop/data
+#      - .\volumes\datanode3:/home/hadoop/data   # For Windows systems
+      - ./volumes/datanode3:/home/hadoop/data   # For UNIX systems
 
   sparkmaster:
 #    image: registry.gitlab.com/rychly-edu/docker/docker-spark:2.4.4-hadoop3.2
@@ -126,5 +131,5 @@ services:
 #    entrypoint: tail -F /dev/null
 #
     volumes:
-      - ..\docker-app\app:/app    # For Windows systems
-#      - ../docker-app/app:/app   # For UNIX systems
+#      - ..\docker-app\app:/app    # For Windows systems
+      - ../docker-app/app:/app   # For UNIX systems
