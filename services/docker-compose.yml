@@ -1,7 +1,5 @@
 version: '3'
 services:
-
-  # HDFS services from rychly-edu
   namenode:
     image: registry.gitlab.com/rychly-edu/docker/docker-hdfs:3.2.1
     environment:
@@ -67,56 +65,54 @@ services:
 
   sparkmaster:
 #    image: registry.gitlab.com/rychly-edu/docker/docker-spark:2.4.4-hadoop3.2
-    image: ghcr.io/miroslavis/spark
+    image: ghcr.io/miroslavis/spark:1.2
     environment:
       - ROLE=master
       - MASTER_PORT=7077
       - WEBUI_PORT=4040
     ports:
 #      - "7077:7077"
-      - "54041:4040"
-
-  sparkworker:
-    image: ghcr.io/miroslavis/spark
-    # to restart lost workers (i.e., workers exited with after a task or on a failure when asked to kill an executor)
-    restart: always
-    environment:
-      - ROLE=worker
-      - MASTER_URL=spark://sparkmaster:7077
-      - WEBUI_PORT=4040
-      - SPARK_WORKER_CORES=4
-      - SPARK_WORKER_MEMORY=3g
-    ports:
       - "54040:4040"
 
-  sparkworker2:
-    image: ghcr.io/miroslavis/spark
+  sparkworker:
+    image: ghcr.io/miroslavis/spark:1.2
     # to restart lost workers (i.e., workers exited with after a task or on a failure when asked to kill an executor)
     restart: always
     environment:
       - ROLE=worker
       - MASTER_URL=spark://sparkmaster:7077
       - WEBUI_PORT=4040
-      - SPARK_WORKER_CORES=4
-      - SPARK_WORKER_MEMORY=3g
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=1g
+    ports:
+      - "54041:4040"
+
+  sparkworker2:
+    image: ghcr.io/miroslavis/spark:1.2
+    restart: always
+    environment:
+      - ROLE=worker
+      - MASTER_URL=spark://sparkmaster:7077
+      - WEBUI_PORT=4040
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=1g
     ports:
       - "54042:4040"
 
   sparkworker3:
-    image: ghcr.io/miroslavis/spark
-    # to restart lost workers (i.e., workers exited with after a task or on a failure when asked to kill an executor)
+    image: ghcr.io/miroslavis/spark:1.2
     restart: always
     environment:
       - ROLE=worker
       - MASTER_URL=spark://sparkmaster:7077
       - WEBUI_PORT=4040
-      - SPARK_WORKER_CORES=4
-      - SPARK_WORKER_MEMORY=3g
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=1g
     ports:
       - "54043:4040"
 
   sparkapp:
-    image: ghcr.io/miroslavis/sparkapp:1.2
+    image: ghcr.io/miroslavis/sparkapp:1.4
     environment:
       - MASTER_URL=spark://sparkmaster:7077
       - SPARK_JARS=/app/lib
@@ -129,5 +125,6 @@ services:
     working_dir: /app
 #    entrypoint: tail -F /dev/null
 #
-#    volumes:
-#      - ..\docker-app\app:/app
+    volumes:
+      - ..\docker-app\app:/app    # For Windows systems
+#      - ../docker-app/app:/app   # For UNIX systems

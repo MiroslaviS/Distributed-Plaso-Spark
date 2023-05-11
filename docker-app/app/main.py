@@ -6,8 +6,6 @@
 from flask import Flask, request, make_response
 from managers.localmanager import LocalStorageManager
 from managers.distributedmanager import DistributedFileManager
-# import findspark
-# findspark.init()    # This is necessary to be before importing sparkContext !
 
 from plasospark.sparkplaso import SparkPlaso
 
@@ -19,7 +17,7 @@ local_storage = LocalStorageManager(app)
 hdfs_storage = DistributedFileManager()
 
 @app.route('/extract', methods=['POST'])
-def spark():
+def extract():
     data = request.get_json()
     output_file = data.get('output_file')
     formatter = data.get('formatter')
@@ -30,7 +28,6 @@ def spark():
     if plaso_args:
         plaso_args = eval(plaso_args)
 
-    app.logger.warning(f"EXTRACTING AS TEST: {test}")
     plaso_spark = SparkPlaso(app.logger.warning,
                             formatter=formatter,
                             output_file=output_file,
@@ -56,7 +53,7 @@ def upload_files():
     return make_response({"status": "OK, preprocessing before HDFS started", "saved_files": saved_files}, 200)
 
 
-@app.route("/upload/file")
+@app.route("/upload/file", methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
         return make_response("Missing file key in request", 400)
@@ -69,7 +66,7 @@ def upload_file():
     return make_response({"status": "OK, preprocessing before HDFS started", "saved_file": filename}, 200)
 
 
-@app.route("/upload/hdfs")
+@app.route("/upload/hdfs", methods=['GET'])
 def upload_to_hdfs():
     result = hdfs_storage.upload_to_hdfs(app.config['PREPROCESSED_FOLDER'])
     local_storage.delete_folder(local_storage.preprocessed_folder)
@@ -77,18 +74,18 @@ def upload_to_hdfs():
     return make_response({"status": "OK", "result": result}, 200)
 
 
-@app.route("/delete/hdfs")
+@app.route("/delete/hdfs", methods=['DELETE'])
 def delete_hdfs():
     result = hdfs_storage.delete_hdfs_files()
 
     return make_response({"status": "OK", "result": result}, 200)
 
-@app.route("/list/hdfs")
+@app.route("/list/hdfs", methods=['GET'])
 def list_hdfs():
     files = hdfs_storage.get_files()
     return make_response({"files": files})
 
-@app.route("/list/local")
+@app.route("/list/local", methods=['GET'])
 def list_app():
     files = local_storage.list_folder(app.config['PREPROCESSED_FOLDER'])
 
