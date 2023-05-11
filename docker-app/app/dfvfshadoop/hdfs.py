@@ -1,4 +1,4 @@
-""" Component for HDFS control"""
+""" Component for HDFS control """
 
 import os.path
 from pyarrow import fs

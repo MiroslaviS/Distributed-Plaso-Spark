@@ -1,4 +1,7 @@
-""" dfvfs implementation of HDFS file entry and file directory """
+""" dfvfs implementation of HDFS file entry and file directory
+    for detailed explanation
+    see https://dfvfs.readthedocs.io/en/latest/sources/developer/Adding-new-type.html
+"""
 
 from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS
 

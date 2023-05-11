@@ -1,4 +1,7 @@
-""" dfvfs implementation of HDFS file system"""
+""" dfvfs implementation of HDFS file system
+    for detailed explanation
+    see https://dfvfs.readthedocs.io/en/latest/sources/developer/Adding-new-type.html
+"""
 
 from dfvfs.vfs.file_system import FileSystem
 from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS

@@ -1,10 +1,13 @@
+""" dfvfs implementation of HDFS file
+    for detailed explanation
+    see https://dfvfs.readthedocs.io/en/latest/sources/developer/Adding-new-type.html
+"""
 
 from dfvfs.file_io.file_io import FileIO
 from dfvfs.helpers.hdfs import Hdfs
 from dfvfs.lib.errors import PathSpecError, BackEndError
 import os
 
-""" dfvfs implementation of HDFS file"""
 
 class HDFSFile(FileIO):
     def __init__(self, resolver_context, path_spec):
@@ -43,7 +46,6 @@ class HDFSFile(FileIO):
             self._size = file_object.size()
         except Exception as e:
             raise BackEndError(f"Unable to open file {location} with error: {e}")
-
 
     def read(self, size=None):
         if not self._is_open:

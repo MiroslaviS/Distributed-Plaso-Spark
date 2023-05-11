@@ -1,4 +1,6 @@
 """ Component for registering and managing all available formatters  """
+
+
 class FormatterManager:
     """ Manager for formatters """
     registered_formatters = []

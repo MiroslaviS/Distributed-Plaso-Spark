@@ -1,4 +1,7 @@
-""" dfvfs implementation of HDFS file specification """
+""" dfvfs implementation of HDFS file specification
+    for detailed explanation
+    see https://dfvfs.readthedocs.io/en/latest/sources/developer/Adding-new-type.html
+"""
 
 from dfvfs.path.location_path_spec import LocationPathSpec
 from dfvfs.lib.definitions import TYPE_INDICATOR_HDFS
