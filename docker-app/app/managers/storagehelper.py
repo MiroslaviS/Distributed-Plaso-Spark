@@ -63,10 +63,11 @@ class ArchiveImageHelper:
                             os.makedirs(extracted_path, exist_ok=True)
                             continue
 
-                        with open(extracted_path, "w") as fsrc:
-                            f.readpath(fsrc)
+                        if os.path.exists(extracted_path):
+                            with open(extracted_path, "w") as fsrc:
+                                f.readpath(fsrc)
 
-                        extracted_files.append(extracted_path)
+                            extracted_files.append(extracted_path)
 
                 if extracted_files:
                     delete_file = True
@@ -100,7 +101,7 @@ class ArchiveImageHelper:
 
         logfile = "delete_me_" + str(os.getpid())
 
-        export_return_code = subprocess.run(['python3.7', '-m', 'tools.image_export', '-w', export_image_path, source_path_location, "--partitions", "all", "--volumes", "all", "-q", "--logfile", logfile], cwd='/plaso')
+        export_return_code = subprocess.run(['python3.7', '-m', 'tools.image_export', '-w', export_image_path, source_path_location, "--partitions", "all", "--volumes", "all", "-q", "--logfile", logfile, "-u"], cwd='/plaso')
         return export_return_code, export_image_path
 
     def _ScanSourceForArchive(self, path_spec):

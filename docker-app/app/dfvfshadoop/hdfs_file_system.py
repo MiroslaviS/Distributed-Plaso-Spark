@@ -27,8 +27,6 @@ class HDFSFileSystem(FileSystem):
         if location is None:
             raise ValueError('Missing location in path specification.')
 
-        # TODO: Spravit open_filesystem genericky pomocou PathSpec s namenode lokaciou alebo
-        # pomocou split nazvu suboru kde sa vytiahne -> `hdfs://namenode`
         self.hdfs.open_filesystem("namenode")
 
     def FileEntryExistsByPathSpec(self, path_spec):

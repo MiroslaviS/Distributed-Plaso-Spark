@@ -116,7 +116,11 @@ class DistributedFileManager(StorageInterface):
             (Bool, str): HDFS path to saved file
         """
         with input_stream(file_path) as f:
-            self.hdfs_file_system.upload_file(hdfs_path, f)
+            try:
+                self.hdfs_file_system.upload_file(hdfs_path, f)
+            except OSError:
+                # Damaged file may occur in dataset, expect OSError while uploading
+                return False, None
 
         return True, hdfs_path
 
