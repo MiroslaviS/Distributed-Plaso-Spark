@@ -12,9 +12,9 @@ services:
     ports:
       - "54987:9870"
       - "54988:8020"
-    volumes:
-#      - .\volumes\namenode:/home/hadoop/name   # For Windows systems
-      - ./volumes/namenode:/home/hadoop/name    # For UNIX systems
+#    volumes:
+#      - .\volumes\namenode:/home/hadoop/name    # For Windows systems
+#      - ./volumes/namenode:/home/hadoop/name    # For UNIX systems
 
   datanode1:
     image: registry.gitlab.com/rychly-edu/docker/docker-hdfs:3.2.1
@@ -29,9 +29,9 @@ services:
 #      - "9864"
 #      - "9865"
 #      - "9867"
-    volumes:
-#      - .\volumes\datanode1:/home/hadoop/data  # For Windows systems
-      - ./volumes/datanode1:/home/hadoop/data   # For UNIX systems
+#    volumes:
+#      - .\volumes\datanode1:/home/hadoop/data   # For Windows systems
+#      - ./volumes/datanode1:/home/hadoop/data   # For UNIX systems
 
   datanode2:
     image: registry.gitlab.com/rychly-edu/docker/docker-hdfs:3.2.1
@@ -46,9 +46,9 @@ services:
 #      - "9864"
 #      - "9865"
 #      - "9867"
-    volumes:
+#    volumes:
 #      - .\volumes\datanode2:/home/hadoop/data   # For Windows systems
-      - ./volumes/datanode2:/home/hadoop/data   # For UNIX systems
+#      - ./volumes/datanode2:/home/hadoop/data   # For UNIX systems
 
 
   datanode3:
@@ -64,13 +64,13 @@ services:
 #      - "9864"
 #      - "9865"
 #      - "9867"
-    volumes:
+#    volumes:
 #      - .\volumes\datanode3:/home/hadoop/data   # For Windows systems
-      - ./volumes/datanode3:/home/hadoop/data   # For UNIX systems
+#      - ./volumes/datanode3:/home/hadoop/data   # For UNIX systems
 
   sparkmaster:
 #    image: registry.gitlab.com/rychly-edu/docker/docker-spark:2.4.4-hadoop3.2
-    image: ghcr.io/miroslavis/spark:1.2
+    image: ghcr.io/miroslavis/spark:1.3
     environment:
       - ROLE=master
       - MASTER_PORT=7077
@@ -80,7 +80,7 @@ services:
       - "54040:4040"
 
   sparkworker:
-    image: ghcr.io/miroslavis/spark:1.2
+    image: ghcr.io/miroslavis/spark:1.3
     # to restart lost workers (i.e., workers exited with after a task or on a failure when asked to kill an executor)
     restart: always
     environment:
@@ -93,7 +93,7 @@ services:
       - "54041:4040"
 
   sparkworker2:
-    image: ghcr.io/miroslavis/spark:1.2
+    image: ghcr.io/miroslavis/spark:1.3
     restart: always
     environment:
       - ROLE=worker
@@ -105,7 +105,7 @@ services:
       - "54042:4040"
 
   sparkworker3:
-    image: ghcr.io/miroslavis/spark:1.2
+    image: ghcr.io/miroslavis/spark:1.3
     restart: always
     environment:
       - ROLE=worker
@@ -117,7 +117,7 @@ services:
       - "54043:4040"
 
   sparkapp:
-    image: ghcr.io/miroslavis/sparkapp:1.4
+    image: ghcr.io/miroslavis/sparkapp:1.7
     environment:
       - MASTER_URL=spark://sparkmaster:7077
       - SPARK_JARS=/app/lib
@@ -129,7 +129,6 @@ services:
       - "5000:5000"
     working_dir: /app
 #    entrypoint: tail -F /dev/null
-#
-    volumes:
-#      - ..\docker-app\app:/app    # For Windows systems
-      - ../docker-app/app:/app   # For UNIX systems
+#    volumes:
+#      - ..\docker-app\app:/app   # For Windows systems
+#      - ../docker-app/app:/app   # For UNIX systems
