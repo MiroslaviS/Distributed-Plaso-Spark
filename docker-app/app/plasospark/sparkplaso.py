@@ -102,8 +102,8 @@ class SparkPlaso:
 
             self.extraction_result_rdd = self.job_factory.create_events_from_rdd(extraction_data)
 
+            self.start_time = time.time()
             if self.extraction_test:
-                self.start_time = time.time()
                 extracted_events = self.extraction_result_rdd.collect()
                 self.test_events_size = len(extracted_events)
                 self.extraction_time = time.time() - self.start_time
@@ -140,8 +140,7 @@ class SparkPlaso:
 
                 response = {'events': formatted_events,
                             'status': f'Events formated to {self.formatter.NAME}',
-                            'time': self.end_time - self.start_time,
-                            'extraction_time': self.extraction_time}
+                            'time': self.end_time - self.start_time}
 
         else:
             events = self.extraction_result_rdd.collect()

@@ -62,12 +62,13 @@ class ArchiveImageHelper:
                         if extracted_path[-1] == '/':
                             os.makedirs(extracted_path, exist_ok=True)
                             continue
-
-                        if os.path.exists(extracted_path):
+                        try:
                             with open(extracted_path, "w") as fsrc:
                                 f.readpath(fsrc)
+                        except:
+                            continue
 
-                            extracted_files.append(extracted_path)
+                        extracted_files.append(extracted_path)
 
                 if extracted_files:
                     delete_file = True
